@@ -1,0 +1,4 @@
+"0","monte_carlo_2018 <- CSLSlevels::monte_carlo_2018"
+"2","Error in getExportedValue(pkg, name) : 
+  lazy-load database 'C:/Users/votercb/Documents/R/win-library/3.5/CSLSlevels/data/Rdata.rdb' is corrupt
+"

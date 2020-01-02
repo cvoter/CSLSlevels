@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1576855573073.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2611319434",
+    "id" : "64D6DE54",
+    "lastKnownWriteTime" : 1576880269,
+    "last_content_update" : 1576880269892,
+    "path" : "Z:/WQWT_PROJECTS/WY_MS_Monitoring/2018 Summer Field Crew/Central Sands Lake Study/Analysis_2019/CSLSlevels/R/monte_carlo_functions.R",
+    "project_path" : "R/monte_carlo_functions.R",
+    "properties" : {
+        "cursorPosition" : "16,56",
+        "scrollLine" : "0",
+        "tempName" : "Untitled2"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

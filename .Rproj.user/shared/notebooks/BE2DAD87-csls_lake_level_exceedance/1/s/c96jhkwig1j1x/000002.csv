@@ -1,0 +1,7 @@
+"0","year_prob_level3 <- find_multiple_levels(csls_levels, "
+"0","                                         years = c(1905:2018), "
+"0","                                         probs = probs,"
+"0","                                         types = ""forward"", "
+"0","                                         windows = 38)"
+"0",""
+"0","plot_analysis_window(year_prob_level3, 1981, text_size = text_size)"
