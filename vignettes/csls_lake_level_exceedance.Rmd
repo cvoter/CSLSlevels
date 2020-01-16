@@ -10,23 +10,22 @@ vignette: >
 ---
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+# Libraries
 library(CSLSlevels)
-library(devtools)
-library(ggplot2)  # for plotting
-library(extrafont)  # for fonts
-library(dplyr)  # for %>% pipes
-library(reshape2) # for dcast
-library(cowplot) # for plotgrid
-library(magick) #for drawing images
-library(knitr)
-library(kableExtra)
+library(ggplot2)     # for plotting
+library(extrafont)   # for fonts
+library(dplyr)       # for %>% pipes
+library(reshape2)    # for dcast
+library(cowplot)     # for plot_grid
+library(magick)      # for drawing images
+library(knitr)       # for tables
+library(kableExtra)  # for tables
 
-
+# Data and parameters
 csls_levels <- CSLSlevels::csls_levels
 lake_names  <- c("Pleasant Lake", "Long Lake", "Plainfield Lake")
 probs       <- c(10, 50, 90)
 text_size   <- 12
-
 ```
 
 ## Window of Analysis
@@ -48,33 +47,9 @@ deterimine the 10%, 50%, and 90% exceedance lake levels for each random
 permutation. I did this 50 times for each possible window length (from 1 year up to 114
 years).
 
-```{r lakelevel04, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r montecarlo01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
 monte_carlo_2018 <- CSLSlevels::monte_carlo_2018
 summary_2018     <- summarise_monte_carlo(monte_carlo_2018)
-```
-
-```{r lakelevel05, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-
-# Below, I'm showing each monte carlo iteration (grey lines) as well as the **mean
-# lake levels** from all permutations (colored lines). While there is quite a bit of
-# variation depending on which years are sampled, the random permuations converge
-# on a mean lake level as long at least 10 years of data are used.
-
-ggplot() +
-  geom_line(data = monte_carlo_2018,
-              aes(x = year, y = level), color = "grey70") +
-  geom_line(data = summary_2018,
-            aes(x = year, y = mean, color = prob)) +
-  facet_wrap(~lake, scales = "free_y") +
-  scale_color_manual(breaks = as.factor(probs),
-                     values = c("#4575B4", "#FDAE61", "#D73027")) +
-  theme_bw() +
-  theme(text = element_text(family = "Segoe UI Semilight",
-                                      size = text_size),
-                  plot.title = element_text(hjust = 0.5),
-                  panel.grid.major = element_blank(),
-                  panel.grid.minor = element_blank(),
-                  legend.position = "top")
 ```
 
 <br>
@@ -89,24 +64,7 @@ levels are randomly sampled in this analysis and thus are independent from one
 another, while real lake levels are pretty strongly autocorrelated with one
 another.
 
-```{r lakelevel06, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-
-# ggplot() +
-#   geom_smooth(data = monte_carlo_2018,
-#               aes(x = year, y = level, group = prob)) +
-#   geom_line(data = summary_2018,
-#             aes(x = year, y = mean, color = prob)) +
-#   facet_wrap(~lake, scales = "free_y") +
-#   scale_color_manual(breaks = as.factor(probs),
-#                      values = c("#4575B4", "#FDAE61", "#D73027")) +
-#   theme_bw() +
-#   theme(text = element_text(family = "Segoe UI Semilight",
-#                                       size = text_size),
-#                   plot.title = element_text(hjust = 0.5),
-#                   panel.grid.major = element_blank(),
-#                   panel.grid.minor = element_blank(),
-#                   legend.position = "top")
-
+```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
 ggplot() +
   geom_line(data = summary_2018,
             aes(x = year, y = std, color = prob)) +
@@ -119,10 +77,10 @@ ggplot() +
   theme_bw() +
   theme(text = element_text(family = "Segoe UI Semilight",
                                       size = text_size),
-                  plot.title = element_text(hjust = 0.5),
-                  panel.grid.major = element_blank(),
-                  panel.grid.minor = element_blank(),
-                  legend.position = "top")
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
 ```
 
 <br>
@@ -132,10 +90,10 @@ the end date of the window. Anything to the right of 1955 (dashed line) is using
 > 30 years of levels.
 
 ```{r lakelevel01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-year_prob_level1 <- find_multiple_levels(csls_levels, 
-                                         years = c(1905:2018), 
-                                         probs = probs,
-                                         types = "forward")
+year_prob_level1 <- find_lake_level_sensitivity(csls_levels, 
+                                                years = c(1905:2018), 
+                                                probs = probs,
+                                                types = "forward")
 
 plot_analysis_window(year_prob_level1, 1934, text_size = text_size)
 ```
@@ -147,10 +105,10 @@ the changing start date of the window. Anything to the left of 1989 (dashed
 line) is using > 30 years of levels.
 
 ```{r lakelevel02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-year_prob_level2 <- find_multiple_levels(csls_levels, 
-                                         years = c(1905:2018), 
-                                         probs = probs,
-                                         types = "backward")
+year_prob_level2 <- find_lake_level_sensitivity(csls_levels, 
+                                                years = c(1905:2018), 
+                                                probs = probs,
+                                                types = "backward")
 
 plot_analysis_window(year_prob_level2, 1989, text_size = text_size)
 ```
@@ -158,17 +116,17 @@ plot_analysis_window(year_prob_level2, 1989, text_size = text_size)
 <br> 
 
 **38 year window.** Here, all windows end 38 years after the start date. The
-x-axis represents the changing start date of the window. Everything plotted here
-includes exactly 38 years of data (the end date is 38 years after the plotted
+x-axis represents the changing start date of the window. Everything ted here
+includes exactly 38 years of data (the end date is 38 years after the ted
 date on the x-axis). The dashed line represents the window 1981 - 2018 (when
 daily PRISM data is available).
 
 ```{r lakelevel03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-year_prob_level3 <- find_multiple_levels(csls_levels, 
-                                         years = c(1905:2018), 
-                                         probs = probs,
-                                         types = "forward", 
-                                         windows = 38)
+year_prob_level3 <- find_lake_level_sensitivity(csls_levels, 
+                                                years = c(1905:2018), 
+                                                probs = probs,
+                                                types = "forward", 
+                                                windows = 38)
 
 plot_analysis_window(year_prob_level3, 1981, text_size = text_size)
 ```
@@ -180,9 +138,10 @@ lines highlight the 10%, 50%, and 90% exceedance probabilities. The biggest
 differences are between the pre-1960 (window 1905-1960) and post-1981 (window 1981 - 2018) curves.
 
 ```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-ranked <- rank_multiple_windows(csls_levels, 
-                                years = c(1960, 1960, 1981, 2018), 
-                                types = c("forward", "backward", "backward", "forward"))
+ranked <- rank_lake_levels_sensitivity(csls_levels, 
+                                       years = c(1960, 1960, 1981, 2018), 
+                                       types = c("forward", "backward",
+                                                 "backward", "forward"))
 plot_exceedance_curve(ranked, probs, text_size = text_size)
 ```
 

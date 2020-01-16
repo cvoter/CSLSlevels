@@ -3,16 +3,16 @@
 \docType{data}
 \name{monte_carlo_2018}
 \alias{monte_carlo_2018}
-\title{Monte Carlo 2018 results}
+\title{Dataset: monte carlo analysis of lake level exceedance probabilities 1905-2018}
 \format{A data frame with the 10, 50, and 90 percent exceedance probability
-  lake level under different random samples of years for CSLS lakes.
+lake level under different random samples of years for CSLS lakes.
 \describe{
-  \item{year}{number of years randomly sampled}
-  \item{type}{"random"}
-  \item{window}{number of monte carlo run}
-  \item{prob}{exceedance probability}
-  \item{lake}{Lake name, "Long Lake", "Plainfield Lake", or "Pleasant Lake"}
-  \item{level}{Lake level (mamsl)}
+\item{year}{number of years randomly sampled}
+\item{type}{"random"}
+\item{window}{number of monte carlo run}
+\item{prob}{exceedance probability}
+\item{lake}{lake name, "Long Lake", "Plainfield Lake", or "Pleasant Lake"}
+\item{level}{lake level (mamsl)}
 }}
 \usage{
 data(monte_carlo_2018)

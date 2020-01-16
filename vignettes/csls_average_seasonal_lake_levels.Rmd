@@ -1,0 +1,158 @@
+---
+title: "Defining Average Seasonal Lake Levels"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(CSLSlevels)
+library(ggplot2)     # for plots
+library(extrafont)   # for fonts
+
+# Data and parameters
+csls_levels <- CSLSlevels::csls_levels
+lake_names  <- c("Pleasant Lake", "Long Lake", "Plainfield Lake")
+probs       <- c(10, 50, 90)
+text_size   <- 12
+```
+
+# Overview
+This document supports the Wisconsin Department of Natural Resources's Central
+Sands Lakes Study Technical Report and may be included as an appendix detailing
+how "Average Seasonal Lake Levels" are defined. In addition to this write-up, a
+separate write-up will be required to describe how the historical lake levels
+were reconstructed (detailing both the main approach plus additional lines of
+evidence, such as tree core analysis and historical air photos).
+
+<br> 
+
+# Background
+
+## Natural Hydrologic Regimes
+Emphasise that dynamic variation is critical to "natural", "typical", or
+"average" hydrologic condtions. Introduce Poff et al. components of natural
+regime for streams (magnitude, frequency, duration, timing/predictability,
+flashiness).
+
+## Lake Level Frequency Curves
+Introduce the idea of frequency curves (broken up by season) as a way to define
+the "average seasonal water level" for lakes and capture most of Poff elements
+(with the assumption that "flashiness" is not as critical for lakes as it is for
+streams). Decision to focus on 50%, 10%, and 90% exceedance levels 
+
+## Window of Analysis
+Note that there is no "undisturbed" state in the Central Sands within the period
+of record, so our selection of which years to use should be based entirely upon
+the math/logistical consideration, not specifics related to the Central Sands
+land use, etc. Mention need to compare apples to apples with modleing
+simulations, thus not only limited by availability of historical lake level data
+but also availability of model outputs.
+
+<br> 
+
+# Approach
+
+## Lake Level Frequency Curves
+The math of how this is calculated, including a description of R package & functions.
+
+## Sensitivity to Window of Analysis
+Describe sensitivity analyses investigating the impact of using a shortened lake
+level dataset as opposed to the entire lake level dataset.
+
+```{r montecarlo02, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+monte_carlo_2018 <- CSLSlevels::monte_carlo_2018
+summary_2018     <- summarise_monte_carlo(monte_carlo_2018)
+ggplot() +
+  geom_line(data = summary_2018,
+            aes(x = year, y = std, color = prob)) +
+  geom_vline(xintercept = 38, linetype = "dashed") +
+  facet_wrap(~lake, scales = "free_y") +
+  scale_color_manual(values = c("#4575B4", "#FDAE61", "#D73027")) +
+  labs(x = "Number of Years in Window",
+       y = "Standard Deviation of Lake Level",
+       color = "Exceedance Probability (%)") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                                      size = text_size),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+```
+
+<br> 
+
+# Average Seasonal Lake Levels
+
+```{r curves, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+ranked_annual <- rank_lake_levels(csls_levels, 
+                                  window_start = 1981, 
+                                  window_end = 2018,
+                                  lake_names = lake_names)
+ranked_seasons <- rank_lake_levels_seasonal(csls_levels, 
+                                            lake_names = lake_names)
+
+plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake_name){
+  plot_obj <- ggplot() +
+              geom_line(data = filter(ranked_seasons, lake == lake_name),
+                        aes(x = prob, y = level, color = season),
+                        size = 1) +
+              geom_line(data = filter(ranked_annual, lake == lake_name),
+                        aes(x = prob, y = level),
+                        color = "black",
+                        size = 1) +
+              scale_x_continuous(expand = c(0, 0)) +
+              scale_color_brewer(palette = "Set2",
+                                 breaks = c("spring", "summer", 
+                                            "fall", "winter"),
+                                 labels = c("Spring", "Summer", 
+                                            "Fall", "Winter")) +
+              labs(x = "Exceedance Probability (%)",
+                   y = "Lake Level (mamsl)",
+                   color = "Season",
+                   title = lake_name) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                    plot.title = element_text(hjust = 0.5))
+  return(plot_obj)
+}
+
+
+
+```
+
+
+
+For each lake, include the following figures:
+
+1. Lake level frequency curve with 4 lines (one for each season)
+2. Areal view of 10%, 50%, and 90% exceedance curves for each season (4-part figure)
+
+## Pleasant Lake
+```{r psnt, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+lake_name <- "Pleasant Lake"
+plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+```
+
+## Long Lake
+
+```{r long, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+lake_name <- "Long Lake"
+plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+```
+
+## Plainfield Lake
+
+```{r pfl, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+lake_name <- "Plainfield Lake"
+plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+```
+
+# References
+

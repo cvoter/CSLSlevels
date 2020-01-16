@@ -1,4 +1,4 @@
-#' Monte Carlo 2018 results
+#' Dataset: monte carlo analysis of lake level exceedance probabilities 1905-2018
 #'
 #' Lake levels at specific exceedance probabilities from different years of
 #' analysis.
@@ -14,7 +14,7 @@
 #'   \item{type}{"random"}
 #'   \item{window}{number of monte carlo run}
 #'   \item{prob}{exceedance probability}
-#'   \item{lake}{Lake name, "Long Lake", "Plainfield Lake", or "Pleasant Lake"}
-#'   \item{level}{Lake level (mamsl)}
+#'   \item{lake}{lake name, "Long Lake", "Plainfield Lake", or "Pleasant Lake"}
+#'   \item{level}{lake level (mamsl)}
 #' }
 "monte_carlo_2018"

@@ -1,4 +1,4 @@
-#' CSLS Reconstructed Lake Levels
+#' Dataset: CSLS reconstructed lake levels
 #'
 #' Monthly historical lake levels from Bob Smail's cumulative deviation in
 #' precipitation approach.
