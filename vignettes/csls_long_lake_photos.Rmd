@@ -1,0 +1,248 @@
+---
+title: "A Look Back at Long Lake"
+output: 
+  rmarkdown::html_vignette:
+vignette: >
+  %\VignetteIndexEntry{A Look Back at Long Lake}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(CSLSlevels)
+library(dplyr)
+library(lubridate)
+library(magick)
+library(cowplot)
+library(ggplot2)
+library(ggspatial)
+
+# Parameters
+text_size   <- 10
+
+# Photo observations (location & dates)
+obs_loc      <- data.frame(x = -89.448499, y = 44.204690)
+photo_dates1 <- as_datetime(ymd(c("2006-07-01", "2006-08-01", "2006-09-01")))
+photo_dates2 <- as_datetime(ymd(c("2009-08-01", "2009-09-01", "2009-10-01")))
+photo_dates3 <- as_datetime(ymd("1964-10-01"))
+
+# Lake level data
+lake        <- "Long"
+csls_levels <- CSLSlevels::csls_levels
+lake_levels <- subset(csls_levels, lake_name == sprintf("%s Lake", lake))
+
+lake_levels_2000s  <- lake_levels %>%
+                      filter(year(obs_mo) > 2003,
+                             year(obs_mo) < 2012)
+lake_levels_1960s  <- lake_levels %>%
+                      filter(year(obs_mo) > 1957,
+                             year(obs_mo) < 1966)
+photo_levels_2000s <- lake_levels %>%
+                      filter(as_datetime(obs_mo) %in% 
+                               c(photo_dates1, photo_dates2),
+                             !is.na(lake_lev_obs))
+photo_levels_1960s <- lake_levels %>%
+                      filter(as_datetime(obs_mo) %in% 
+                               c(photo_dates1, photo_dates2),
+                             !is.na(lake_lev_obs))
+
+# Exceedance probabilities
+ranked_annual      <- rank_lake_levels(lake_levels, 
+                                       window_start = 1981, 
+                                       window_end = 2018,
+                                       lake_names = "Long Lake")
+photo_levels_1960s$prob <- approx(x = ranked_annual$level,
+                                  y = ranked_annual$prob,
+                                  xout = photo_levels_1960s$lake_lev_obs)$y
+```
+
+## FAQ: How could lake levels be lower at Long Lake in 1964 than in 2007?
+
+One aspect of Long Lake's history that can be puzzling to those who remember how
+low lake levels were in the early 2000s is that levels are recorded as being
+even lower in 1964. Personal photos from homeowners taken from the eastern
+shoreline depict the Long Lake as a dense meadow of vegetation with no visible
+standing water in 2009. The year 2007 saw lower lake levels and is particularly
+memorable as a year that the lake "dried up" as seen from the shoreline. By
+contrast, a personal photo from a homewoner dated 1964 shows standing water
+clearly visible from the northern shoreline. Yet 1964 lake levels were
+documented as being 11 cm lower than in 2007, 28 cm lower than in 2006, and 40
+cm lower than 2009.
+
+<center>
+**How can this be?**
+</center>
+
+<br>
+
+To investigate this, we paired historic lake level observations with detailed
+lake bathymetry data collected as part of the WI DNR's Central Sands Lakes Study
+to generate maps of lake depth. We then paired these lake depth maps with the
+views from the shoreline that homeowners captured in their personal photos.
+
+## What do we know about lake levels during these years?
+
+Let's start by taking a step back to look at what we know about lake level
+behavior leading up to each of these dates. We have much less data leading up to
+1964 than we do in the early 2000s, but the data we do have shows that lake
+levels were in a steep decline for several years leading up to 1964.
+
+
+
+```{r levels, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 6.5, fig.height = 3}
+plot_levels <- ggplot() +
+               geom_line(data = lake_levels_2000s,
+                         aes(x = as.Date(obs_mo), y = lake_lev_pred)) +
+               geom_point(data = lake_levels_2000s,
+                          aes(x = as.Date(obs_mo), y = lake_lev_obs)) +
+               geom_point(data = photo_levels_1960s,
+                          aes(x = as.Date(obs_mo), y = lake_lev_obs),
+                          color = "red") +
+               theme_bw() +
+               labs(y = "Lake Level (mamsl)",
+                    x = "") +
+               theme(text = element_text(family = "Segoe UI Semilight",
+                                         size = text_size),
+               panel.grid.major = element_blank())
+
+plot_exceed <- ggplot() +
+               geom_line(data = ranked_annual,
+                         aes(x = prob, y = level),
+                         color = "black") +
+               geom_point(data = photo_levels_1960s,
+                          aes(x = prob, y = lake_lev_obs),
+                          color = "red",
+                          size = 2) +
+               scale_x_continuous(expand = c(0, 0)) +
+               labs(x = "Exceedance Probability (%)",
+                    y = "Lake Level (mamsl)") +
+               theme_bw() +
+               theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size))
+
+plot_grid(plot_levels, plot_exceed)
+```
+
+
+Some of the lowest lake levels at Long Lake ever recorded occurred between 2006
+and 2010. Brian Wolf, a homeowoner on Long Lake, collected photodocumentation of
+lake levels during this time. According to George Kraft (with input from Brian
+Wolf):
+
+> *Brian and family bought their place on east end of Long Lake in April 2005.
+> They were told the lake is a little low but it always comes back. That’s where
+> the photodocumentation begins.*
+
+Here, we're comparing all photos with a) a known location and visible shoreline,
+b) a known month and year, and c) an observation within 2 months of that date to
+d) bathymetry maps of the lake at the observed level.
+
+<br>
+
+There are two periods of time that meet this criteria: Summer 2006 and late
+Summer/Fall 2009 (the red points). Lake levels at these two times represent some
+of the lowest levels captured in the lake level exceedance curve for Long Lake
+(>95% exceedance probability). Lake levels were rapidly falling in Summer 2006
+and were beginning to rise in late Summer/Fall 2009, but the the recorded lake
+levels are approximately the same at both dates (within 12 cm of each other).
+This provides an interesting comparison of how vegetation at Long Lake responded
+to the same water level when levels were falling vs. rising.
+
+
+## Summer 2006
+
+These photos were taken by homeowner Brian Wolf on July 29, 2006 from the east
+side of Long Lake looking west. At this time, lake levels had been rapidly
+falling for at least a year and lily pads are visible in some regions. The areas
+with lily pads approximately correspond with the regions where depth is over 0.5
+m.
+
+```{r pic01, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 6.5, fig.height = 3}
+im01         <- ggdraw() + draw_image("long_2006_07_im1.jpg", scale = 0.9)
+im02         <- ggdraw() + draw_image("long_2006_07_im2.jpg", scale = 0.9)
+
+plot_grid(im01, im02)
+```
+
+```{r bathy01, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 6.5, fig.height = 4}
+lake_obs    <- lake_levels %>%
+               filter(as_datetime(obs_mo) %in% photo_dates1)
+lake_level  <- mean(lake_obs$lake_lev_obs, na.rm = TRUE)
+bathy1       <- plot_lake_depths(lake, 
+                                lake_level,
+                                relative_depth_fill = TRUE,
+                                title_name = sprintf("%s Lake", lake),
+                                legend_position = "right",
+                                text_size = text_size)+
+                geom_spatial_point(data = obs_loc, 
+                                   aes(x, y),
+                                   crs = 4326,
+                                   color = "red",
+                                   shape = 8,
+                                   size = 2.5)
+bathy2       <- plot_lake_depths(lake, 
+                                lake_level,
+                                relative_depth_fill = FALSE,
+                                title_name = sprintf("%s Lake", lake),
+                                legend_position = "right",
+                                text_size = text_size) +
+                geom_spatial_point(data = obs_loc, 
+                                   aes(x, y),
+                                   crs = 4326,
+                                   color = "red",
+                                   shape = 8,
+                                   size = 2.5)
+bathy2
+bathy1
+```
+
+## Summer 2009
+
+George Kraft also shared photos from homeowner Brian Wolf taken on September 27,
+2009 from the east side of Long Lake looking west. Lake levels at this time are
+on their way up, but approximately the same as in Summer 2006 (only 12 cm
+higher). Open water is visible approximately where the bathymetry maps indicate
+water depth is over 0.5 m, but the surrounding area is filled with dense,
+mid-height (~3-5 ft tall) vegetation.
+
+```{r pic02, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 6.5, fig.height = 3}
+im01        <- ggdraw() + draw_image("long_2009_09.jpg", scale = 0.9)
+im02        <- ggdraw() + draw_image("long_2009_10.jpg", scale = 0.9)
+
+plot_grid(im01, im02)
+```
+
+```{r bathy02, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 6.5, fig.height = 4}
+lake_obs    <- lake_levels %>%
+               filter(as_datetime(obs_mo) %in% photo_dates2)
+lake_level  <- mean(lake_obs$lake_lev_obs, na.rm = TRUE)
+bathy1       <- plot_lake_depths(lake, 
+                                lake_level,
+                                relative_depth_fill = TRUE,
+                                title_name = sprintf("%s Lake", lake),
+                                legend_position = "right",
+                                text_size = text_size)+
+                geom_spatial_point(data = obs_loc, 
+                                   aes(x, y),
+                                   crs = 4326,
+                                   color = "red",
+                                   shape = 8,
+                                   size = 2.5)
+bathy2       <- plot_lake_depths(lake, 
+                                lake_level,
+                                relative_depth_fill = FALSE,
+                                title_name = sprintf("%s Lake", lake),
+                                legend_position = "right",
+                                text_size = text_size) +
+                geom_spatial_point(data = obs_loc, 
+                                   aes(x, y),
+                                   crs = 4326,
+                                   color = "red",
+                                   shape = 8,
+                                   size = 2.5)
+bathy2
+bathy1
+```
+
+
+## References

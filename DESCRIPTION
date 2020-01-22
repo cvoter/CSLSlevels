@@ -21,7 +21,9 @@ Imports:
     tibble,
     ggspatial,
     raster,
-    stringr
+    stringr,
+    sf,
+    CSLSdata
 Suggests:
     knitr,
     rmarkdown,

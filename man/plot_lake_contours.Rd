@@ -10,7 +10,7 @@ plot_lake_contours(
   color_legend_title = "Exceedance Probability (\%)",
   color_labels = c(10, 50, 90),
   color_values = c("#a80000", "#ffab00", "#004da8"),
-  legend_position = "top",
+  legend_position = "right",
   title_name = NULL,
   text_size = 10
 )

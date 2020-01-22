@@ -17,6 +17,8 @@ library(raster)
 library(dplyr)
 library(ggspatial)
 library(cowplot)
+library(knitr)
+library(reshape2)
 
 # Data and parameters
 csls_levels <- CSLSlevels::csls_levels
@@ -38,37 +40,85 @@ evidence, such as tree core analysis and historical air photos).
 # Background
 
 ## Natural Hydrologic Regimes
-Emphasise that dynamic variation is critical to "natural", "typical", or
-"average" hydrologic condtions. Introduce Poff et al. components of natural
+Emphasize that dynamic variation is critical to “natural”, “typical”, or
+“average” hydrologic conditions. Introduce Poff et al. components of natural
 regime for streams (magnitude, frequency, duration, timing/predictability,
 flashiness).
 
 ## Lake Level Frequency Curves
 Introduce the idea of frequency curves (broken up by season) as a way to define
-the "average seasonal water level" for lakes and capture most of Poff elements
-(with the assumption that "flashiness" is not as critical for lakes as it is for
-streams). Decision to focus on 50%, 10%, and 90% exceedance levels 
+the “average seasonal water level” for lakes and capture most of Poff elements
+(with the assumption that “flashiness” is not as critical for lakes as it is for
+streams). Decision to focus on 50%, 10%, and 90% exceedance levels.
 
 ## Window of Analysis
-Note that there is no "undisturbed" state in the Central Sands within the period
+Note that there is no “undisturbed” state in the Central Sands within the period
 of record, so our selection of which years to use should be based entirely upon
 the math/logistical consideration, not specifics related to the Central Sands
-land use, etc. Mention need to compare apples to apples with modleing
+land use, etc. Mention need to compare apples to apples with modeling
 simulations, thus not only limited by availability of historical lake level data
 but also availability of model outputs.
 
 <br> 
 
 # Approach
+All calculations involved in the analysis of average seasonal lake levels were
+performed using R 3.5.0 and are contained in the R package “CSLSlevels”. Data
+and code are available at [https://github.com/cvoter/CSLSlevels].
 
 ## Lake Level Frequency Curves
-Lake level
+To calculate seasonal lake level frequency curves for each lake, we divided the
+timeseries of reconstructed monthly lake levels (see Bob’s section) into four
+separate timeseries for spring, summer, fall, and winter lake levels. We defined
+spring as the months of March, April, and May; summer as June, July, and August;
+fall as September, October, and November; and winter as December, January, and
+February. We then arranged lake level observations in each seasonal timeseries
+from highest (rank = 1) to lowest and calculated the exceedance probability ,
+$p_{i}$ (%), of each observation as follows:
+
+\begin{align}
+\tag{1}
+p_{i} = 100*\frac{i}{n + 1}
+\end{align}
+
+where $i$ is the rank of the observation and $n$ is the total number of
+observations.
+
+<br>
+
+From these seasonal lake level frequency curves, we used linear interpolation to
+extract the lake levels associated with a 10%, 50%, and 90% exceedance
+probability.
+
+<br>
 
 ## Sensitivity to Window of Analysis
-Describe sensitivity analyses investigating the impact of using a shortened lake
-level dataset as opposed to the entire lake level dataset.
+While the reconstructed timeseries of monthly lake levels dates back to 1905,
+the MODFLOW model associated with this project is only able to simulate lake
+levels since 1981 due to the availability of daily, spatially-gridded
+precipitation and air temperature data for model inputs. In order to fairly
+compare observed and simulated lake level exceedance curves, we opted to
+calculate observed lake level exceedance curves for the same period as the
+MODFLOW model: 1981-2018.
 
-```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+<br>
+
+To evaluate the effect of using a shorter timeseries (e.g., 1981-2018) for lake
+level exceedance curves rather than a longer timeseries (e.g., 1905-2018), we
+performed a sensitivity analysis on how the number of years used to generate the
+lake level exceedance curves affects the lake levels associated with the 10%,
+50%, and 90% exceedance probabilities. We randomly sampled lake levels from an
+increasing number of years and calculated the lake levels associated with the
+10%, 50%, and 90% exceedance probabilities for each random permutation. We did
+this 50 times for each possible window length (from 1 year up to 115 years).
+Results show that incorporating more years of data into the lake level
+exceedance curve reduces variation in estimates of the lake levels associated
+with the 10%, 50%, and 90% exceedance probabilities (Figure 1). However, there
+is an inflection point at a window size of about 30 years, which indicates that
+by using at least 30 years of data, we should reasonably converge on long-term
+behavior.
+
+```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 3.5}
 monte_carlo_2018 <- CSLSlevels::monte_carlo_2018
 summary_2018     <- summarise_monte_carlo(monte_carlo_2018)
 ggplot() +
@@ -93,7 +143,7 @@ ggplot() +
 
 # Average Seasonal Lake Levels
 
-```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 3.5, fig.height = 2}
 ranked_annual  <- rank_lake_levels(csls_levels, 
                                    window_start = 1981, 
                                    window_end = 2018,
@@ -106,16 +156,16 @@ plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake_name){
   plot_obj <- ggplot() +
               geom_line(data = filter(ranked_seasons, lake == lake_name),
                         aes(x = prob, y = level, color = season),
-                        size = 1) +
+                        size = 0.8) +
               geom_line(data = filter(ranked_annual, lake == lake_name),
                         aes(x = prob, y = level),
                         color = "black",
                         size = 1) +
               scale_x_continuous(expand = c(0, 0)) +
               scale_color_brewer(palette = "PuOr",
-                                 breaks = c("summer", "spring", 
+                                 breaks = c("spring", "summer", 
                                             "fall", "winter"),
-                                 labels = c("Summer", "Spring", 
+                                 labels = c("Spring", "Summer", 
                                             "Fall", "Winter")) +
               labs(x = "Exceedance Probability (%)",
                    y = "Lake Level (mamsl)",
@@ -124,7 +174,10 @@ plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake_name){
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight",
                                         size = text_size),
-                    plot.title = element_text(hjust = 0.5))
+                    plot.title = element_text(hjust = 0.5),
+                    legend.position = "bottom",
+                    legend.margin = margin(0,0,0,0),
+                    legend.box.margin = margin(0,0,0,0))
   return(plot_obj)
 }
 
@@ -157,22 +210,22 @@ plot_lake_areas <- function(lake, ranked_levels) {
                  theme(axis.text.x = element_text(angle = 45, hjust = 1))
   
   # Separate legend
-  # legend <- get_legend(plot_winter + theme(legend.position = "top",
-  #                                          legend.direction = "horizontal",
-  #                                          legend.justification = "center",
-  #                                          legend.box.just = "top",
-  #                                          legend.title.align = 1,
-  #                                          legend.text.align = 0.5,
-  #                                          legend.margin = margin(0,0,0,0),
-  #                                          legend.box.margin = margin(0,0,0,0)))
   legend <- get_legend(plot_winter + theme(legend.position = "top",
                                            legend.direction = "horizontal",
-                                           legend.justification = "left",
+                                           legend.justification = "center",
                                            legend.box.just = "top",
                                            legend.title.align = 1,
                                            legend.text.align = 0.5,
                                            legend.margin = margin(0,0,0,0),
                                            legend.box.margin = margin(0,0,0,0)))
+  # legend <- get_legend(plot_winter + theme(legend.position = "top",
+  #                                          legend.direction = "horizontal",
+  #                                          legend.justification = "left",
+  #                                          legend.box.just = "top",
+  #                                          legend.title.align = 1,
+  #                                          legend.text.align = 0.5,
+  #                                          legend.margin = margin(0,0,0,0),
+  #                                          legend.box.margin = margin(0,0,0,0)))
   # Combine maps
   plot_maps <- plot_grid(plot_winter + theme(legend.position="none"), 
                          plot_spring + theme(legend.position="none"), 
@@ -181,45 +234,132 @@ plot_lake_areas <- function(lake, ranked_levels) {
                          ncol = 2)
   # Combine legend
   # plot_all  <- plot_grid(plot_maps, legend, ncol = 2, rel_widths = c(2, 0.4))
-  plot_all  <- plot_grid(legend, plot_maps, ncol = 1, rel_heights = c(0.4, 2))
+  plot_all  <- plot_grid(plot_maps, legend, ncol = 1, rel_heights = c(2, 0.2))
   
   return(plot_all)
 }
 
 ```
 
-
-
-For each lake, include the following figures:
-
-1. Lake level frequency curve with 4 lines (one for each season)
-2. Areal view of 10%, 50%, and 90% exceedance curves for each season (4-part figure)
-
 ## Pleasant Lake
-```{r psnt, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4}
+Average seasonal lake levels at Pleasant Lake are the least dynamic of the three
+lakes in this study (Figure 2). The seasonal lake level exceedance curves show
+that lake levels have historically fluctuated between 297.8 mamsl and 299.9
+mamsl, a 2.1 m range.  However, lake levels rarely reach the extremes of this
+range. The lake levels associated with the 10% and 90% exceedance probabilities
+are within 0.6 m to 0.7 m of one another in all four seasons (Table 1). As the
+deepest point of the lake is 291.1 mamsl, this correspsonds to a typical lake
+depth of 7 m to 7.9 m. Lake levels are generally lowest in the spring and
+highest in the fall.
+
+<br>
+
+This stability in average seasonal lake levels is also evident in the minimal
+variation in lakeshores associated with the 10%, 50%, and 90% exceedance
+probabilities for each season (Figure 3).  Much of the lakeshore experiences
+minimal change across these lake levels, however the connectivity between Turtle
+Bay (in the southwest corner of the lake) and the larger lake is sensitive to
+this variation in lake levels; Turtle Bay occasionally becomes connected to the
+larger lake in the summer and the fall. The penisula of land in the northeast
+corner of the lake is also more sensitive than the rest of the lakeshore to
+variations in lake levels, becoming more prominent at lower lake levels.
+
+```{r psnt, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 4.5, fig.height = 3.5, fig.align="center"}
 lake      <- "Pleasant"
 lake_name <- sprintf("%s Lake", lake)
 plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
 ```
-```{r psnt02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 5}
+
+```{r psnt02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4, fig.align="center"}
+new_levels       <- ranked_levels %>%
+                    filter(lake == sprintf("%s Lake", !!lake)) %>%
+                    select(season, prob, level) %>%
+                    dcast(season~prob)
+new_levels[,2:4] <- round(new_levels[,2:4], 2)
+kable(new_levels)
+```
+
+```{r psnt03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6.5, fig.align="center"}
 plot_lake_areas(lake, ranked_levels)
 ```
 
 ## Long Lake
 
-```{r long, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+The seasonal lake level exceedance curves for Long Lake (Figure 4) show that
+lake levels have historically fluctuated between 333.1 mamsl and 336.3 mamsl, a
+3.2 m range. Importantly, the deepest point of the lake is at 332.9 mamsl, which
+indicates that the lake is occasionally as shallow as 20 cm. Based on the 10%
+and 90% exceedance probabilities, the lake is more commonly between 333.6 mamsl
+and 334.5 mamsl, or between 70 cm and 2.1 m deep (Table 2). Lake levels are
+generally lowest in the spring and highest in the fall.
+
+<br>
+
+While the typical range in lake levels at Long Lake is similar to the typical
+range in lake levels at Pleasant Lake (0.9 m), it corresponds with more visible
+differences in the lakeshore at the shallower Long Lake (Figure 5). The
+lakeshores associated with 10% and 50% exceedance probabilities at Long Lake are
+similar to one another, but the lakeshores associated with 90% exceedance
+probabilities are much more sensitive to lake levels due to the flat lake bed at
+these elevations.
+
+```{r long, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 4.5, fig.height = 3.5, fig.align="center"}
 lake      <- "Long"
 lake_name <- sprintf("%s Lake", lake)
 plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+```
+
+```{r long02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4, fig.align="center"}
+new_levels       <- ranked_levels %>%
+                    filter(lake == sprintf("%s Lake", !!lake)) %>%
+                    select(season, prob, level) %>%
+                    dcast(season~prob)
+new_levels[,2:4] <- round(new_levels[,2:4], 2)
+kable(new_levels)
+```
+
+```{r long03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6.5, fig.align="center"}
 plot_lake_areas(lake, ranked_levels)
 ```
 
 ## Plainfield Lake
 
-```{r pfl, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+The seasonal lake level exceedance curves for Plainfield Lake (Figure 6) show
+that lake levels have historically fluctuated between 333.1 mamsl and 335.8
+mamsl, a 2.7 m range. The deepest point of Plainfield Lake is at 332.1 mamsl,
+which indicates that the lake is occasionally as shallow as 1.0 m and as deep as
+3.7 m. Plainfield Lake reaches these extremes more commonly than Pleasant Lake
+or Long Lake reach their extremes. Based on the 10% and 90% exceedance
+probabilities, the lake is often (80% of the time) between 333.5 mamsl and 334.7
+mamsl, or between 1.4 m and 2.6 m deep (Table 3). As in both Pleasant Lake and
+Long Lake, lake levels at Plainfield Lake are generally lowest in the spring and
+highest in the fall.
+
+```{r pfl, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 4.5, fig.height = 3.5, fig.align="center"}
 lake      <- "Plainfield"
 lake_name <- sprintf("%s Lake", lake)
 plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+```
+
+```{r pfl02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4, fig.align="center"}
+new_levels       <- ranked_levels %>%
+                    filter(lake == sprintf("%s Lake", !!lake)) %>%
+                    select(season, prob, level) %>%
+                    dcast(season~prob)
+new_levels[,2:4] <- round(new_levels[,2:4], 2)
+kable(new_levels)
+```
+
+<br>
+
+Out of all three lakes in this study, the lakeshore at Plainfield Lake is the
+most sensitive to lake level variation (Figure 7). At infrequent low levels,
+particularly in the spring, islands can appear throughout the lake. The
+lakeshore at the southeast corner of the lake is especially dynamic, with a
+peninsula of land that occasionally becomes an island during infrequent high
+lake levels in the summer, fall, and winter.
+
+```{r pfl03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6.5, fig.align="center"}
 plot_lake_areas(lake, ranked_levels)
 ```
 
