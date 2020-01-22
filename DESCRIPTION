@@ -18,7 +18,10 @@ Imports:
     lubridate,
     rlang,
     stats,
-    tibble
+    tibble,
+    ggspatial,
+    raster,
+    stringr
 Suggests:
     knitr,
     rmarkdown,

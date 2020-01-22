@@ -4,7 +4,7 @@ output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Put the title of your vignette here}
+  %\VignetteIndexEntry{CSLS Lake Level Exceedance}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
