@@ -10,7 +10,11 @@ plot_lake_depths(
   relative_depth_fill = TRUE,
   legend_position = "right",
   title_name = NULL,
-  text_size = 10
+  fill_name = "Depth (m)",
+  text_size = 10,
+  lat_long_off = TRUE,
+  scale_bar = "bl",
+  scale_bar_on = TRUE
 )
 }
 \arguments{
@@ -28,7 +32,17 @@ leave the legend off the returned plot).}
 
 \item{title_name}{string to use for plot title}
 
+\item{fill_name}{string to use for fill legend title, defaults to "Depth (m)".}
+
 \item{text_size}{font size for text in plot}
+
+\item{lat_long_off}{logical for whether to include lat long axis labels.
+Defaults to TRUE to remove axis tick marks and labels.}
+
+\item{scale_bar}{location of annotation scale bar, defaults to "bl" for
+bottom left ("tl" = top left, etc.)}
+
+\item{scale_bar_on}{logical defaults to true to display scale bar.}
 }
 \value{
 plot_obj, a plot with the contours of the lake.

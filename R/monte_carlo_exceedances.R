@@ -28,11 +28,12 @@ monte_carlo_exceedances <- function(levels, ts_start = 1905, ts_end = 2018,
 
   for (replicate in 1:nreplicates){
     for (nyears in 1:nloops) {
-      ranked <- rank_lake_levels_random(levels, nyears, ts_start, ts_end)
-      for (prob in probs){
-        monte_carlo <- rbind(monte_carlo,
-                             find_lake_level(ranked, nyears, "random", replicate, prob))
-      }
+      ranked <- calculate_probs_of_levels(levels, ts_start, ts_end,
+                                          nyears = nyears)
+      this_sim        <- calculate_levels_at_probs(ranked, probs)
+      this_sim$year   <- nyears
+      this_sim$sim_no <- replicate
+      monte_carlo     <- rbind(monte_carlo, this_sim)
     }
   }
 

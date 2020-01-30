@@ -24,7 +24,7 @@ plot_exceedance_curve <- function(df, probs = c(10, 50, 90), text_size){
 plot_obj <- ggplot(df,
                    aes(x = .data$prob,
                        y = .data$level,
-                       color = interaction(.data$year, .data$type, .data$window))) +
+                       color = as.factor(.data$sim_no))) +
             facet_wrap(~lake, scales = "free_y") +
             geom_line(size = 1) +
             geom_vline(xintercept = probs, linetype = "dashed")  +

@@ -15,6 +15,12 @@
 #'                        leave the legend off the returned plot).
 #' @param title_name string to use for plot title
 #' @param text_size font size for text in plot
+#' @param lat_long_off logical for whether to include lat long axis labels.
+#'                     Defaults to TRUE to remove axis tick marks and labels.
+#' @param scale_bar location of annotation scale bar, defaults to "bl" for
+#'                  bottom left ("tl" = top left, etc.)
+#' @param fill_name string to use for fill legend title, defaults to "Depth (m)".
+#' @param scale_bar_on logical defaults to true to display scale bar.
 #'
 #' @return plot_obj, a plot with the contours of the lake.
 #'
@@ -31,7 +37,12 @@ plot_lake_depths <- function(lake,
                              relative_depth_fill = TRUE,
                              legend_position = "right",
                              title_name = NULL,
-                             text_size = 10) {
+                             fill_name = "Depth (m)",
+                             text_size = 10,
+                             lat_long_off = TRUE,
+                             scale_bar = "bl",
+                             scale_bar_on = TRUE) {
+
   # Get raster and draw contours
   lake_raster    <- CSLSlevels::lake_raster[[lake]]
   raster_summary <- summary(lake_raster)
@@ -64,21 +75,26 @@ plot_lake_depths <- function(lake,
   }
   # Determine limits of fill
   if (relative_depth_fill) {
-    plot_obj  <- plot_obj + scale_fill_distiller(palette = "Blues",
+    plot_obj  <- plot_obj + scale_fill_distiller(palette = "YlGnBu",
                                                  direction = 1,
                                                  limits = c(0, max_depth))
   } else {
-    plot_obj  <- plot_obj + scale_fill_distiller(palette = "Blues",
+    plot_obj  <- plot_obj + scale_fill_distiller(palette = "YlGnBu",
                                                  direction = 1)
   }
+
+  if (scale_bar_on) {
+    plot_obj  <- plot_obj +
+                 annotation_scale(location = scale_bar)
+  }
+
   # Add other aesthetics
   plot_obj    <- plot_obj +
                  layer_spatial(data = contours_poly[1,],
                                color = "black",
                                fill = NA) +
-                 annotation_scale(location = "tl") +
                  labs(title = title_name,
-                      fill = "Depth (m)",
+                      fill = fill_name,
                       x = "", y = "") +
                  theme_bw() +
                  theme(text = element_text(family = "Segoe UI Semilight",
@@ -87,5 +103,13 @@ plot_lake_depths <- function(lake,
                        plot.title = element_text(hjust = 0.5),
                        legend.position = legend_position,
                        axis.text.x = element_text(angle = 45, hjust = 1))
+
+  # Remove lat long axis, if needed
+  if (lat_long_off) {
+    plot_obj <- plot_obj +
+                theme(axis.text = element_blank(),
+                      axis.ticks = element_blank())
+  }
+
   return(plot_obj)
 }

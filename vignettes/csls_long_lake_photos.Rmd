@@ -38,45 +38,41 @@ photos_all_2000s <- c(photos_2005, photos_2006, photos_2007, photos_2009, photos
 # Lake level data
 lake        <- "Long"
 csls_levels <- CSLSlevels::csls_levels
-lake_levels <- subset(csls_levels, lake_name == sprintf("%s Lake", lake)) %>%
-               mutate(obs_mo = as_datetime(obs_mo))
-long_limits <- c(min(lake_levels$lake_lev_pred, na.rm = TRUE),
-                 max(lake_levels$lake_lev_pred, na.rm = TRUE))
+lake_levels <- csls_levels %>% filter(.data$lake == !!lake)
+long_limits <- c(min(lake_levels$level_pred, na.rm = TRUE),
+                 max(lake_levels$level_pred, na.rm = TRUE))
 
 lake_levels_2000s  <- lake_levels %>%
-                      filter(year(obs_mo) > 1999,
-                             year(obs_mo) <= 2012)
+                      filter(year(date) > 1999,
+                             year(date) <= 2012)
 lake_levels_1960s  <- lake_levels %>%
-                      filter(year(obs_mo) > 1955,
-                             year(obs_mo) <= 1968)
+                      filter(year(date) > 1955,
+                             year(date) <= 1968)
 photo_levels_2000s <- lake_levels %>%
-                      filter(obs_mo %in% photos_all_2000s,
-                             !is.na(lake_lev_obs))
+                      filter(date %in% photos_all_2000s,
+                             !is.na(level_obs))
 photo_levels_1960s <- lake_levels %>%
-                      filter(obs_mo %in% photos_1964,
-                             !is.na(lake_lev_obs))
+                      filter(date %in% photos_1964,
+                             !is.na(level_obs))
 
 # Exceedance probabilities
-ranked_annual      <- rank_lake_levels(lake_levels, 
-                                       window_start = 1981, 
-                                       window_end = 2018,
-                                       lake_names = "Long Lake")
+ranked_annual           <- calculate_probs_of_levels(lake_levels)
 photo_levels_1960s$prob <- approx(x = ranked_annual$level,
                                   y = ranked_annual$prob,
-                                  xout = photo_levels_1960s$lake_lev_obs)$y
+                                  xout = photo_levels_1960s$level_obs)$y
 photo_levels_2000s$prob <- approx(x = ranked_annual$level,
                                   y = ranked_annual$prob,
-                                  xout = photo_levels_2000s$lake_lev_obs)$y
+                                  xout = photo_levels_2000s$level_obs)$y
 
 # Plotting functions
 plot_historical_series <- function(df_obs, df_photos){
   plot_obj <- ggplot() +
               geom_line(data = df_obs,
-                        aes(x = obs_mo, y = lake_lev_pred)) +
+                        aes(x = date, y = level_pred)) +
               geom_point(data = df_obs,
-                         aes(x = obs_mo, y = lake_lev_obs)) +
+                         aes(x = date, y = level_obs)) +
               geom_point(data = df_photos,
-                         aes(x = obs_mo, y = lake_lev_obs),
+                         aes(x = date, y = level_obs),
                          color = "red") +
               theme_bw() +
               labs(y = "Lake Level (mamsl)",
@@ -95,7 +91,7 @@ plot_exceedance_curve <- function(df_ranked, df_photos){
                         aes(x = prob, y = level),
                         color = "black") +
               geom_point(data = df_photos,
-                         aes(x = prob, y = lake_lev_obs),
+                         aes(x = prob, y = level_obs),
                          color = "red",
                          size = 2) +
               scale_x_continuous(expand = c(0, 0)) +
@@ -225,17 +221,22 @@ photos and measurements exist for:
 ```{r compare, echo=FALSE, warning=FALSE, message=FALSE}
 plot_bathy <- function(photo_dates, max_depth_lims, obs_loc = NULL) {
   lake_obs   <- lake_levels %>%
-                filter(obs_mo %in% photo_dates)
-  lake_level <- mean(lake_obs$lake_lev_obs, na.rm = TRUE)
+                filter(date %in% photo_dates)
+  lake_level <- mean(lake_obs$level_obs, na.rm = TRUE)
   bathy      <- plot_lake_depths(lake, 
                                  lake_level,
-                                 relative_depth_fill = FALSE,
+                                 relative_depth_fill = TRUE,
                                  title_name = sprintf("%s Lake", lake),
                                  legend_position = "right",
                                  text_size = text_size) +
-                scale_fill_distiller(palette = "Blues",
+                scale_fill_distiller(palette = "YlGnBu",
                                      direction = 1,
                                      limits = c(0, max_depth_lims))
+                # scale_fill_gradient2(low = "#8C510A",
+                #                      mid = "#F5F5F5", 
+                #                      high = "#01665E",
+                #                      midpoint = 2,
+                #                      limits = c(0, 5))
   if (!is.null(obs_loc)) {
     bathy <- bathy + 
              geom_spatial_point(data = obs_loc, 

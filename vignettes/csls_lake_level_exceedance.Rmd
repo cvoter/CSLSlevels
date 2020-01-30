@@ -23,7 +23,6 @@ library(kableExtra)  # for tables
 
 # Data and parameters
 csls_levels <- CSLSlevels::csls_levels
-lake_names  <- c("Pleasant Lake", "Long Lake", "Plainfield Lake")
 probs       <- c(10, 50, 90)
 text_size   <- 12
 ```
@@ -90,7 +89,7 @@ the end date of the window. Anything to the right of 1955 (dashed line) is using
 > 30 years of levels.
 
 ```{r lakelevel01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-year_prob_level1 <- find_lake_level_sensitivity(csls_levels, 
+year_prob_level1 <- sensitivity_levels_at_probs(csls_levels, 
                                                 years = c(1905:2018), 
                                                 probs = probs,
                                                 types = "forward")
@@ -105,7 +104,7 @@ the changing start date of the window. Anything to the left of 1989 (dashed
 line) is using > 30 years of levels.
 
 ```{r lakelevel02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-year_prob_level2 <- find_lake_level_sensitivity(csls_levels, 
+year_prob_level2 <- sensitivity_levels_at_probs(csls_levels, 
                                                 years = c(1905:2018), 
                                                 probs = probs,
                                                 types = "backward")
@@ -118,17 +117,16 @@ plot_analysis_window(year_prob_level2, 1989, text_size = text_size)
 **38 year window.** Here, all windows end 38 years after the start date. The
 x-axis represents the changing start date of the window. Everything ted here
 includes exactly 38 years of data (the end date is 38 years after the ted
-date on the x-axis). The dashed line represents the window 1981 - 2018 (when
-daily PRISM data is available).
+date on the x-axis).
 
 ```{r lakelevel03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-year_prob_level3 <- find_lake_level_sensitivity(csls_levels, 
+year_prob_level3 <- sensitivity_levels_at_probs(csls_levels, 
                                                 years = c(1905:2018), 
                                                 probs = probs,
                                                 types = "forward", 
                                                 windows = 38)
 
-plot_analysis_window(year_prob_level3, 1981, text_size = text_size)
+plot_analysis_window(year_prob_level3, text_size = text_size)
 ```
 
 ## Specific Years
@@ -138,10 +136,10 @@ lines highlight the 10%, 50%, and 90% exceedance probabilities. The biggest
 differences are between the pre-1960 (window 1905-1960) and post-1981 (window 1981 - 2018) curves.
 
 ```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
-ranked <- rank_lake_levels_sensitivity(csls_levels, 
-                                       years = c(1960, 1960, 1981, 2018), 
-                                       types = c("forward", "backward",
-                                                 "backward", "forward"))
+ranked <- sensitivity_probs_of_levels(csls_levels, 
+                                      years = c(1960, 1960, 1981, 2018), 
+                                      types = c("forward", "backward",
+                                                "backward", "forward"))
 plot_exceedance_curve(ranked, probs, text_size = text_size)
 ```
 

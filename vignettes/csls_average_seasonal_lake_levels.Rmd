@@ -19,10 +19,10 @@ library(ggspatial)
 library(cowplot)
 library(knitr)
 library(reshape2)
+library(stringr)
 
 # Data and parameters
 csls_levels <- CSLSlevels::csls_levels
-lake_names  <- c("Pleasant Lake", "Long Lake", "Plainfield Lake")
 probs       <- c(10, 50, 90)
 text_size   <- 10
 ```
@@ -65,6 +65,31 @@ but also availability of model outputs.
 All calculations involved in the analysis of average seasonal lake levels were
 performed using R 3.5.0 and are contained in the R package “CSLSlevels”. Data
 and code are available at [https://github.com/cvoter/CSLSlevels].
+
+## Estimated Lake Levels
+
+```{r estimate, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7, fig.height = 3.5}
+ggplot() +
+  geom_line(data = csls_levels,
+            aes(x = date, y = level_pred, color = "estimated")) +
+  geom_point(data = csls_levels,
+             aes(x = date, y = level_obs, color = "observation")) +
+  facet_wrap(~lake, scales = "free_y") +
+  labs(x = "",
+       y = "Estimated Lake Level (mamsl)",
+       color = "") +
+  scale_color_manual(values = c("grey70", "darkred"),
+                       guide = guide_legend(override.aes = list(
+                         linetype = c("solid", "blank"),
+                         shape = c(NA, 16)))) +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                                      size = text_size),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+```
 
 ## Lake Level Frequency Curves
 To calculate seasonal lake level frequency curves for each lake, we divided the
@@ -118,9 +143,13 @@ is an inflection point at a window size of about 30 years, which indicates that
 by using at least 30 years of data, we should reasonably converge on long-term
 behavior.
 
-```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 3.5}
+```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 monte_carlo_2018 <- CSLSlevels::monte_carlo_2018
 summary_2018     <- summarise_monte_carlo(monte_carlo_2018)
+
+summary_2018$lake <- factor(summary_2018$lake,
+                            levels = c("Pleasant", "Long", "Plainfield"))
+
 ggplot() +
   geom_line(data = summary_2018,
             aes(x = year, y = std, color = prob)) +
@@ -144,24 +173,29 @@ ggplot() +
 # Average Seasonal Lake Levels
 
 ```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 3.5, fig.height = 2}
-ranked_annual  <- rank_lake_levels(csls_levels, 
-                                   window_start = 1981, 
-                                   window_end = 2018,
-                                   lake_names = lake_names)
-ranked_seasons <- rank_lake_levels_seasonal(csls_levels, 
-                                            lake_names = lake_names)
-ranked_levels  <- find_lake_level_seasonal(ranked_seasons)
+ranked_annual  <- calculate_probs_of_levels(csls_levels)
+ranked_seasons <- calculate_probs_of_levels(csls_levels, 
+                                            seasons = list(summer = c(6, 7, 8), 
+                                                           fall = c(9, 10, 11), 
+                                                           winter = c(12, 1, 2), 
+                                                           spring = c(3, 4, 5)))
+levels_annual  <- calculate_levels_at_probs(ranked_annual)
+levels_seasons <- calculate_levels_at_probs(ranked_seasons)
 
-plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake_name){
+plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake){
   plot_obj <- ggplot() +
-              geom_line(data = filter(ranked_seasons, lake == lake_name),
+              geom_line(data = filter(ranked_seasons, lake == !!lake),
                         aes(x = prob, y = level, color = season),
+                        linetype = "dashed",
                         size = 0.8) +
-              geom_line(data = filter(ranked_annual, lake == lake_name),
+              geom_line(data = filter(ranked_annual, lake == !!lake),
                         aes(x = prob, y = level),
                         color = "black",
                         size = 1) +
-              scale_x_continuous(expand = c(0, 0)) +
+              scale_x_continuous(expand = c(0, 0),
+                                 breaks = c(10, 30, 50, 70, 90),
+                                 labels = c("10", "30", "50", "70", "90"),
+                                 minor_breaks = seq(10,90,10)) +
               scale_color_brewer(palette = "PuOr",
                                  breaks = c("spring", "summer", 
                                             "fall", "winter"),
@@ -170,7 +204,7 @@ plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake_name){
               labs(x = "Exceedance Probability (%)",
                    y = "Lake Level (mamsl)",
                    color = "Season",
-                   title = lake_name) +
+                   title = sprintf("%s Lake", lake)) +
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight",
                                         size = text_size),
@@ -181,62 +215,84 @@ plot_seasonal_curves <- function(ranked_annual, ranked_seasons, lake_name){
   return(plot_obj)
 }
 
-plot_lake_areas <- function(lake, ranked_levels) {
-  # Get each season
-  lake_name   <- sprintf("%s Lake", lake)
-  plot_winter <- plot_lake_contours(lake,
-                                    (ranked_levels %>% 
-                                      filter(.data$lake == lake_name, 
-                                             .data$season == "winter"))$level,
-                                    title_name = "Winter") +
-                 theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  plot_spring <- plot_lake_contours(lake,
-                                    (ranked_levels %>% 
-                                      filter(.data$lake == lake_name, 
-                                             .data$season == "spring"))$level,
-                                    title_name = "Spring") +
-                 theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  plot_summer <- plot_lake_contours(lake,
-                                    (ranked_levels %>% 
-                                      filter(.data$lake == lake_name, 
-                                             .data$season == "summer"))$level,
-                                    title_name = "Summer") +
-                 theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
-  plot_fall <- plot_lake_contours(lake,
-                                    (ranked_levels %>% 
-                                      filter(.data$lake == lake_name, 
-                                             .data$season == "fall"))$level,
-                                    title_name = "Fall") +
-                 theme(axis.text.x = element_text(angle = 45, hjust = 1))
-  
+plot_lake_areas <- function(lake, 
+                            levels_seasons, 
+                            seasons = c("summer", "fall", "winter", "spring")) {
+  if (lake == "Pleasant") {
+    scale_bar = "tl"
+  } else {
+    scale_bar = "bl"
+  }
+  plot_seasons <- as.list(NULL)
+  for (season in seasons) {
+    levels     <- levels_seasons %>%
+                  filter(.data$lake == !!lake,
+                         .data$season == !!season)
+    levels_90  <- levels %>% 
+                  filter(.data$prob == "90")
+    this_plot  <- plot_lake_depths(lake, 
+                                   levels_90$level, 
+                                   title_name = str_to_sentence(season), 
+                                   text_size = text_size,
+                                   scale_bar = scale_bar,
+                                   fill_name = "Depth at 90% level (m)")
+    this_plot  <- add_lake_contours(this_plot, lake, levels$level)
+    
+    plot_seasons[[season]] <- this_plot
+  }
   # Separate legend
-  legend <- get_legend(plot_winter + theme(legend.position = "top",
-                                           legend.direction = "horizontal",
-                                           legend.justification = "center",
-                                           legend.box.just = "top",
-                                           legend.title.align = 1,
-                                           legend.text.align = 0.5,
-                                           legend.margin = margin(0,0,0,0),
-                                           legend.box.margin = margin(0,0,0,0)))
-  # legend <- get_legend(plot_winter + theme(legend.position = "top",
-  #                                          legend.direction = "horizontal",
-  #                                          legend.justification = "left",
-  #                                          legend.box.just = "top",
-  #                                          legend.title.align = 1,
-  #                                          legend.text.align = 0.5,
-  #                                          legend.margin = margin(0,0,0,0),
-  #                                          legend.box.margin = margin(0,0,0,0)))
+  legend_fill <- get_legend(plot_seasons[["winter"]] + 
+                              guides(color = FALSE) +
+                              theme(legend.position = "right",
+                                    legend.direction = "horizontal",
+                                    legend.justification = "center",
+                                    legend.box.just = "top",
+                                    legend.title.align = 1,
+                                    legend.text.align = 0.5,
+                                    legend.margin = margin(0,0,0,0),
+                                    legend.box.margin = margin(0,0,0,0)))
+  legend_color <- get_legend(plot_seasons[["winter"]] + 
+                               guides(fill = FALSE) + 
+                               theme(legend.position = "right",
+                                     legend.direction = "horizontal",
+                                     legend.justification = "center",
+                                     legend.box.just = "top",
+                                     legend.title.align = 1,
+                                     legend.text.align = 0.5,
+                                     legend.margin = margin(0,0,0,0),
+                                     legend.box.margin = margin(0,0,0,0)))
   # Combine maps
-  plot_maps <- plot_grid(plot_winter + theme(legend.position="none"), 
-                         plot_spring + theme(legend.position="none"), 
-                         plot_summer + theme(legend.position="none"), 
-                         plot_fall + theme(legend.position="none"), 
+  plot_maps <- plot_grid(plot_seasons[["winter"]] + theme(legend.position="none"), 
+                         plot_seasons[["spring"]] + theme(legend.position="none"), 
+                         plot_seasons[["summer"]] + theme(legend.position="none"), 
+                         plot_seasons[["fall"]] + theme(legend.position="none"), 
                          ncol = 2)
   # Combine legend
-  # plot_all  <- plot_grid(plot_maps, legend, ncol = 2, rel_widths = c(2, 0.4))
-  plot_all  <- plot_grid(plot_maps, legend, ncol = 1, rel_heights = c(2, 0.2))
-  
+  plot_all  <- plot_grid(plot_maps, legend_color, legend_fill, 
+                         ncol = 1, rel_heights = c(2, 0.2, 0.2))
+  # plot_all  <- plot_grid(plot_maps, legend, ncol = 2, rel_widths = c(2, 0.2))
   return(plot_all)
+}
+
+get_level_table <- function(lake, levels_seasons, levels_annual) {
+  new_levels1 <- levels_seasons %>%
+                 filter(lake == !!lake) %>%
+                 select(season, prob, level) %>%
+                 dcast(season~prob)
+  new_levels2 <- levels_annual %>%
+                 filter(lake == !!lake) %>%
+                 select(prob, level) %>%
+                 t()
+  p10 <- as.numeric(new_levels2[2,1])
+  p50 <- as.numeric(new_levels2[2,2])
+  p90 <- as.numeric(new_levels2[2,3])
+  
+  new_levels        <- rbind(new_levels1, c(NA, p10, p50, p90))
+  new_levels[,2:4]  <- round(new_levels[,2:4], 2)
+  new_levels$season <- as.character(new_levels$season)
+  new_levels$season[nrow(new_levels)] <- "Annual"
+  
+  return(new_levels)
 }
 
 ```
@@ -266,21 +322,16 @@ variations in lake levels, becoming more prominent at lower lake levels.
 
 ```{r psnt, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 4.5, fig.height = 3.5, fig.align="center"}
 lake      <- "Pleasant"
-lake_name <- sprintf("%s Lake", lake)
-plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+plot_seasonal_curves(ranked_annual, ranked_seasons, lake)
 ```
 
 ```{r psnt02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4, fig.align="center"}
-new_levels       <- ranked_levels %>%
-                    filter(lake == sprintf("%s Lake", !!lake)) %>%
-                    select(season, prob, level) %>%
-                    dcast(season~prob)
-new_levels[,2:4] <- round(new_levels[,2:4], 2)
+new_levels <- get_level_table(lake, levels_seasons, levels_annual)
 kable(new_levels)
 ```
 
-```{r psnt03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6.5, fig.align="center"}
-plot_lake_areas(lake, ranked_levels)
+```{r psnt03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6, fig.align="center"}
+plot_lake_areas(lake, levels_seasons)
 ```
 
 ## Long Lake
@@ -305,21 +356,16 @@ these elevations.
 
 ```{r long, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 4.5, fig.height = 3.5, fig.align="center"}
 lake      <- "Long"
-lake_name <- sprintf("%s Lake", lake)
-plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+plot_seasonal_curves(ranked_annual, ranked_seasons, lake)
 ```
 
 ```{r long02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4, fig.align="center"}
-new_levels       <- ranked_levels %>%
-                    filter(lake == sprintf("%s Lake", !!lake)) %>%
-                    select(season, prob, level) %>%
-                    dcast(season~prob)
-new_levels[,2:4] <- round(new_levels[,2:4], 2)
+new_levels <- get_level_table(lake, levels_seasons, levels_annual)
 kable(new_levels)
 ```
 
-```{r long03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6.5, fig.align="center"}
-plot_lake_areas(lake, ranked_levels)
+```{r long03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5.5, fig.align="center"}
+plot_lake_areas(lake, levels_seasons)
 ```
 
 ## Plainfield Lake
@@ -337,16 +383,11 @@ highest in the fall.
 
 ```{r pfl, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 4.5, fig.height = 3.5, fig.align="center"}
 lake      <- "Plainfield"
-lake_name <- sprintf("%s Lake", lake)
-plot_seasonal_curves(ranked_annual, ranked_seasons, lake_name)
+plot_seasonal_curves(ranked_annual, ranked_seasons, lake)
 ```
 
 ```{r pfl02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 4, fig.align="center"}
-new_levels       <- ranked_levels %>%
-                    filter(lake == sprintf("%s Lake", !!lake)) %>%
-                    select(season, prob, level) %>%
-                    dcast(season~prob)
-new_levels[,2:4] <- round(new_levels[,2:4], 2)
+new_levels <- get_level_table(lake, levels_seasons, levels_annual)
 kable(new_levels)
 ```
 
@@ -359,8 +400,8 @@ lakeshore at the southeast corner of the lake is especially dynamic, with a
 peninsula of land that occasionally becomes an island during infrequent high
 lake levels in the summer, fall, and winter.
 
-```{r pfl03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 6.5, fig.align="center"}
-plot_lake_areas(lake, ranked_levels)
+```{r pfl03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 5, fig.align="center"}
+plot_lake_areas(lake, levels_seasons)
 ```
 
 # References
