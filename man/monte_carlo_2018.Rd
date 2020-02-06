@@ -7,12 +7,13 @@
 \format{A data frame with the 10, 50, and 90 percent exceedance probability
 lake level under different random samples of years for CSLS lakes.
 \describe{
-\item{year}{number of years randomly sampled}
-\item{type}{"random"}
-\item{window}{number of monte carlo run}
-\item{prob}{exceedance probability}
 \item{lake}{lake name, "Long Lake", "Plainfield Lake", or "Pleasant Lake"}
-\item{level}{lake level (mamsl)}
+\item{level}{lake level (mamsl) associated with exceedance probability for
+given lake and season}
+\item{prob}{exceedance probability associated with lake level}
+\item{season}{season associated with lake level}
+\item{sim_no}{id associated with simulation}
+\item{year}{number of years randomly sampled}
 }}
 \usage{
 data(monte_carlo_2018)

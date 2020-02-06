@@ -4,7 +4,12 @@
 \alias{plot_analysis_window}
 \title{Plot lake levels under varying analysis windows}
 \usage{
-plot_analysis_window(df, xintercept = NA, text_size)
+plot_analysis_window(
+  df,
+  xintercept = NA,
+  text_size,
+  lakes = c("Pleasant", "Long", "Plainfield")
+)
 }
 \arguments{
 \item{df}{data frame to plot with the end year of analysis (year), lake level
@@ -13,6 +18,10 @@ plot_analysis_window(df, xintercept = NA, text_size)
 \item{xintercept}{optional year to highlight with a dashed line}
 
 \item{text_size}{size of text in plots}
+
+\item{lakes}{the names of the lakes in the order you would like them
+displayed in plots, etc. Defaults to c("Pleasant", "Long",
+"Plainfield")}
 }
 \value{
 plot_obj, the plot.

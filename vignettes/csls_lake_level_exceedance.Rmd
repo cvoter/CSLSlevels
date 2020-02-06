@@ -24,7 +24,7 @@ library(kableExtra)  # for tables
 # Data and parameters
 csls_levels <- CSLSlevels::csls_levels
 probs       <- c(10, 50, 90)
-text_size   <- 12
+text_size   <- 10
 ```
 
 ## Window of Analysis
@@ -46,7 +46,7 @@ deterimine the 10%, 50%, and 90% exceedance lake levels for each random
 permutation. I did this 50 times for each possible window length (from 1 year up to 114
 years).
 
-```{r montecarlo01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r montecarlo01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 monte_carlo_2018 <- CSLSlevels::monte_carlo_2018
 summary_2018     <- summarise_monte_carlo(monte_carlo_2018)
 ```
@@ -63,7 +63,7 @@ levels are randomly sampled in this analysis and thus are independent from one
 another, while real lake levels are pretty strongly autocorrelated with one
 another.
 
-```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r montecarlo02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 ggplot() +
   geom_line(data = summary_2018,
             aes(x = year, y = std, color = prob)) +
@@ -88,7 +88,7 @@ ggplot() +
 the end date of the window. Anything to the right of 1955 (dashed line) is using
 > 30 years of levels.
 
-```{r lakelevel01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r lakelevel01, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 year_prob_level1 <- sensitivity_levels_at_probs(csls_levels, 
                                                 years = c(1905:2018), 
                                                 probs = probs,
@@ -103,7 +103,7 @@ plot_analysis_window(year_prob_level1, 1934, text_size = text_size)
 the changing start date of the window. Anything to the left of 1989 (dashed
 line) is using > 30 years of levels.
 
-```{r lakelevel02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r lakelevel02, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 year_prob_level2 <- sensitivity_levels_at_probs(csls_levels, 
                                                 years = c(1905:2018), 
                                                 probs = probs,
@@ -119,7 +119,7 @@ x-axis represents the changing start date of the window. Everything ted here
 includes exactly 38 years of data (the end date is 38 years after the ted
 date on the x-axis).
 
-```{r lakelevel03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r lakelevel03, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 year_prob_level3 <- sensitivity_levels_at_probs(csls_levels, 
                                                 years = c(1905:2018), 
                                                 probs = probs,
@@ -135,7 +135,7 @@ Here, we're comparing the exceedance curves for a few specific end years. Dashed
 lines highlight the 10%, 50%, and 90% exceedance probabilities. The biggest
 differences are between the pre-1960 (window 1905-1960) and post-1981 (window 1981 - 2018) curves.
 
-```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7.5, fig.height = 4.5}
+```{r curves, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 6.5, fig.height = 3.5}
 ranked <- sensitivity_probs_of_levels(csls_levels, 
                                       years = c(1960, 1960, 1981, 2018), 
                                       types = c("forward", "backward",

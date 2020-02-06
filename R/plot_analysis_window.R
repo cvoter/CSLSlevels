@@ -8,6 +8,9 @@
 #'           (level), exceedance probability (prob) and lake name (lake)
 #' @param xintercept optional year to highlight with a dashed line
 #' @param text_size size of text in plots
+#' @param lakes the names of the lakes in the order you would like them
+#'              displayed in plots, etc. Defaults to c("Pleasant", "Long",
+#'              "Plainfield")
 #'
 #' @return plot_obj, the plot.
 #'
@@ -17,8 +20,9 @@
 #'
 #' @export
 
-plot_analysis_window <- function(df, xintercept = NA, text_size) {
-
+plot_analysis_window <- function(df, xintercept = NA, text_size,
+                                 lakes = c("Pleasant", "Long", "Plainfield")) {
+  df$lake  <- factor(df$lake, levels = lakes)
   plot_obj <- ggplot(data = df) +
               geom_line(aes(x = .data$year,
                             y = .data$level,
