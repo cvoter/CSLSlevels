@@ -23,13 +23,13 @@ Imports:
     raster,
     stringr,
     sf,
-    CSLSdata
+    CSLSdata,
+    reshape2
 Suggests:
     knitr,
     rmarkdown,
     devtools,
     kableExtra,
-    reshape2,
     cowplot,
     magick,
     patchwork

@@ -8,10 +8,10 @@
 #' @param df a data frame with columns for "lake", "date", "level_obs", and
 #'           "level_pred" that matches desired time series to analyze
 #' @param lakes name of lakes to analyze
-#' @param exceedance exceedance probabilities to analyze, defaults to 0.9
+#' @param lag_months number of months to analyze rise/fall over, defaults to 1
 #' @param show_zero logical defaults to FALSE. If true, plots vertical line at
 #'                    median number of months.
-#' @param v default to NULL, otherwise used to set max x limits
+#' @param max_rate default to NULL, otherwise used to set max x limits
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
 #' @param vline_color color of vertical line, defaults to a red ("#c00000")
@@ -23,16 +23,18 @@
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
 #' @importFrom raster minValue
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#' @importFrom dplyr filter
 #' @import ggplot2
 #' @import extrafont
 #'
 #' @export
-plot_duration <- function(df,
+plot_rate_change <- function(df,
                           lakes = c("Pleasant", "Long", "Plainfield"),
                           lag_months = 1,
                           show_zero = TRUE,
                           max_rate = NULL,
-                          lakes = c("Pleasant", "Long", "Plainfield"),
                           title = "",
                           text_size = 12,
                           vline_color = "black",

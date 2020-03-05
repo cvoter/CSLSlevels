@@ -14,6 +14,7 @@
 #'                   with two columns: "yintercept" with the values, and "lake"
 #'                   with the name of each lake in df. Default to NULL to not
 #'                   add a line.
+#' @param hline_color color of horizontal line, if present. Defaults to a red.
 #' @param exceedance exceedance probability (e.g., 10 for 10%) to identify with
 #'                   a horizontal line
 #' @param depth_axis logical defaults to TRUE to add a second axis with lake
@@ -30,6 +31,10 @@
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
 #' @importFrom raster minValue
+#' @importFrom reshape2 melt
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#' @import dplyr
 #' @import ggplot2
 #' @import extrafont
 #'
@@ -43,6 +48,7 @@ plot_levels <- function(df,
                         legend_pos = c(0.15, 0.95),
                         text_size = 12,
                         color_vals = c("grey70", "black"),
+                        hline_color = "#c00000",
                         line_size = 1,
                         point_size = 3) {
 
@@ -75,7 +81,7 @@ plot_levels <- function(df,
 
     plot_obj <- plot_obj +
                 geom_blank(data = range,
-                           aes(x = .data$date, y = .data$value))
+                           aes(x = .data$date, y = .data$value)) +
                 facet_wrap(~lake, scales = "free_y")
   }
 
@@ -84,7 +90,7 @@ plot_levels <- function(df,
     plot_obj <- plot_obj +
                 geom_hline(aes(yintercept = yintercept),
                            as.data.frame(yintercept),
-                           color = "darkred",
+                           color = hline_color,
                            linetype = "dashed",
                            size = line_size)
   }
@@ -100,12 +106,12 @@ plot_levels <- function(df,
     }
     yintercept   <- yintercept %>%
                     mutate(yintercept = as.numeric(as.character(.data$level)))
-    yintercept$lake <- factor(yintercept$lake, level = lakes)
+    yintercept$lake <- factor(yintercept$lake, levels = lakes)
 
     plot_obj <- plot_obj +
                 geom_hline(aes(yintercept = yintercept),
                            as.data.frame(yintercept),
-                           color = "darkred",
+                           color = hline_color,
                            linetype = "dashed",
                            size = line_size)
   }

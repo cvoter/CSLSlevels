@@ -6,7 +6,9 @@
 \usage{
 plot_levels(
   df,
+  lakes = c("Pleasant", "Long", "Plainfield"),
   yintercept = NULL,
+  exceedance = NULL,
   depth_axis = TRUE,
   title = "",
   legend_pos = c(0.15, 0.95),
@@ -20,10 +22,16 @@ plot_levels(
 \item{df}{a data frame with columns for "lake", "date", "level_obs", and
 "level_pred".}
 
+\item{lakes}{names of lakes in df in order to display. Defaults to
+c("Pleasant", "Long", "Plainfield")}
+
 \item{yintercept}{either a single value (if only one lake) or a data frame
 with two columns: "yintercept" with the values, and "lake"
 with the name of each lake in df. Default to NULL to not
 add a line.}
+
+\item{exceedance}{exceedance probability (e.g., 10 for 10\%) to identify with
+a horizontal line}
 
 \item{depth_axis}{logical defaults to TRUE to add a second axis with lake
 depth if there's only one lake in the df}

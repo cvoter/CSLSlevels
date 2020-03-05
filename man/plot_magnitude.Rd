@@ -7,8 +7,8 @@
 plot_magnitude(
   df,
   xintercept = NULL,
+  exceedance = NULL,
   title = "",
-  legend_pos = c(0.25, 0.95),
   text_size = 12,
   vline_color = "#c00000",
   hist_color = "grey80",
@@ -26,9 +26,6 @@ with the name of each lake in df. Default to NULL to not
 add a line.}
 
 \item{title}{string to use for title of plot, defaults to "".}
-
-\item{legend_pos}{position of legend. Defaults to c(0.25, 0.95) but can also
-be "top", "right", etc.}
 
 \item{text_size}{size of text, defaults to 12}
 

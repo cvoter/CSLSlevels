@@ -24,6 +24,7 @@
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
 #' @importFrom raster minValue
+#' @importFrom rlang .data
 #' @import ggplot2
 #' @import extrafont
 #'

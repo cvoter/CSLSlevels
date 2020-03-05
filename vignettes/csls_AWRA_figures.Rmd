@@ -1,10 +1,10 @@
 ---
-title: "CSLS Lake Metrics - Sensitivity Analysis"
+title: "AWRA Figures"
 output: 
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Defining Average Seasonal Lake Levels}
+  %\VignetteIndexEntry{AWRA Figures}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -19,18 +19,170 @@ library(extrafont)
 
 lakes           <- c("Pleasant", "Long", "Plainfield")
 csls_levels     <- CSLSlevels::csls_levels
-csls_levels_all <- csls_levels %>% filter(lake %in% lakes)
-csls_levels     <- csls_levels %>% filter(year(date) <= 2018, year(date) >= 1981)
+csls_levels_all <- csls_levels %>% filter(.data$lake %in% lakes)
+csls_levels     <- csls_levels_all %>% 
+                   filter(year(date) <= 2018, year(date) >= 1981)
 
 text_size <- 24
 ```
 
-```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
+```{r plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
 p1 <- plot_levels(csls_levels_all, text_size = text_size)
-p2 <- plot_magnitudes(csls_levels, )
-
+p2 <- plot_levels(csls_levels, text_size = text_size)
+p2a <- plot_levels(csls_levels, text_size = text_size, exceedance = 90)
+p2b <- plot_levels(csls_levels, text_size = text_size, exceedance = 10)
+p2c <- plot_levels(csls_levels, text_size = text_size, exceedance = 50)
+p3 <- plot_magnitude(csls_levels, text_size = text_size)
+p3a <- plot_magnitude(csls_levels, text_size = text_size, exceedance = 90)
+p3b <- plot_magnitude(csls_levels, text_size = text_size, exceedance = 10)
+p3c <- plot_magnitude(csls_levels, text_size = text_size, exceedance = 50)
+p4a <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
+                     exceedance = 0.9, 
+                     show_median = FALSE,
+                     text_size = text_size)
+p4b <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
+                     exceedance = 0.1, 
+                     show_median = FALSE,
+                     text_size = text_size)
+p4am <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
+                     exceedance = 0.9, 
+                     show_median = TRUE,
+                     text_size = text_size)
+p4bm <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
+                     exceedance = 0.1, 
+                     show_median = TRUE,
+                     text_size = text_size)
+p5a <- plot_rate_change(csls_levels, lakes, lag_months = 1, text_size = text_size)
+p5b <- plot_rate_change(csls_levels, lakes, lag_months = 3, text_size = text_size)
+p5c <- plot_rate_change(csls_levels, 
+                        lakes, 
+                        lag_months = 12, 
+                        text_size = text_size)
+p6 <- plot_timing(csls_levels, text_size = text_size)
 ```
 
+
+
+```{r save01, eval=FASLE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
+ggsave(filename = "levels_all_wide.png",
+       plot = p1,
+       path = "doc/figures",
+       width = 13,
+       height = 6,
+       units = "in")
+ggsave(filename = "levels_all.png",
+       plot = p1,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "levels_wide.png",
+       plot = p2,
+       path = "doc/figures",
+       width = 13,
+       height = 6,
+       units = "in")
+ggsave(filename = "levels.png",
+       plot = p2,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "levels_90.png",
+       plot = p2a,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "levels_10.png",
+       plot = p2b,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "levels_50.png",
+       plot = p2c,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "magnitudes.png",
+       plot = p3,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "magnitudes_90.png",
+       plot = p3a,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "magnitudes_10.png",
+       plot = p3b,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "magnitudes_50.png",
+       plot = p3c,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "durations_90.png",
+       plot = p4a,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "durations_10.png",
+       plot = p4b,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "durations_90_median.png",
+       plot = p4am,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "durations_10_median.png",
+       plot = p4bm,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "rate_of_change_1mo.png",
+       plot = p5a,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "rate_of_change_3mo.png",
+       plot = p5b,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "rate_of_change_12mo.png",
+       plot = p5c,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+ggsave(filename = "timing_months.png",
+       plot = p6,
+       path = "doc/figures",
+       width = 13,
+       height = 3.5,
+       units = "in")
+```
 
 ```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
 
@@ -41,45 +193,44 @@ p2 <- plot_levels(csls_levels,
                   legend_pos = c(0.25,0.95))
 p3 <- plot_magnitude(csls_levels, 
                      text_size = text_size)
-p
 ```
 
 ```{r magnitude, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
 # magnitudes (no call outs)
-p2a <- plot_levels(lake_levels, 
+p2a <- plot_levels(csls_levels, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95))
-p2b <- plot_magnitude(lake_levels, text_size = text_size)
+p2b <- plot_magnitude(csls_levels, text_size = text_size)
 p2 <- p2a + p2b
 
 # 50% exceedance level
-p3a <- plot_levels(lake_levels, 
+p3a <- plot_levels(csls_levels, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p50)
-p3b <- plot_magnitude(lake_levels, 
-                      text_size = text_size, 
-                      xintercept = p50)
+                   exceedance = 50)
+p3b <- plot_magnitude(csls_levels, 
+                      text_size = text_size,
+                      exceedance = 50)
 p3 <- p3a + p3b
 
 # 90% exceedance level
-p4a <- plot_levels(lake_levels, 
+p4a <- plot_levels(csls_levels, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p90)
-p4b <- plot_magnitude(lake_levels, 
-                      text_size = text_size, 
-                      xintercept = p90)
+                   exceedance = 90)
+p4b <- plot_magnitude(csls_levels, 
+                      text_size = text_size,
+                      exceedance = 90)
 p4 <- p4a + p4b
 
 # 10% exceedance level
-p5a <- plot_levels(lake_levels, 
+p5a <- plot_levels(csls_levels, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p10)
-p5b <- plot_magnitude(lake_levels, 
-                      text_size = text_size, 
-                      xintercept = p10)
+                   exceedance = 10)
+p5b <- plot_magnitude(csls_levels, 
+                      text_size = text_size,
+                      exceedance = 10)
 p5 <- p5a + p5b
 
 p2
@@ -90,48 +241,48 @@ p5
 
 ```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
 # 90% exceedance level
-p6a <- plot_levels(lake_levels_all, 
+p6a <- plot_levels(csls_levels_all, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p90)
-p6b <- plot_duration(lake_levels_all, 
-                     lakes = lake, 
+                   exceedance = 90)
+p6b <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
                      exceedance = 0.9, 
                      show_median = FALSE,
                      text_size = text_size)
 p6  <- p6a + p6b
 
 # 90% exceedance level - show median
-p6a <- plot_levels(lake_levels_all, 
+p6a <- plot_levels(csls_levels_all, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p90)
-p6b <- plot_duration(lake_levels_all, 
-                     lakes = lake, 
+                   exceedance = 90)
+p6b <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
                      exceedance = 0.9, 
                      show_median = TRUE,
                      text_size = text_size)
 p6_median  <- p6a + p6b
 
 # 10% exceedance level
-p7a <- plot_levels(lake_levels_all, 
+p7a <- plot_levels(csls_levels_all, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p10)
-p7b <- plot_duration(lake_levels_all, 
-                     lakes = lake, 
+                   exceedance = 10)
+p7b <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
                      exceedance = 0.1, 
                      show_median = FALSE,
                      text_size = text_size)
 p7  <- p7a + p7b
 
 # 10% exceedance level - show median
-p7a <- plot_levels(lake_levels_all, 
+p7a <- plot_levels(csls_levels_all, 
                    text_size = text_size, 
                    legend_pos = c(0.25,0.95),
-                   yintercept = p10)
-p7b <- plot_duration(lake_levels_all, 
-                     lakes = lake, 
+                   exceedance = 10)
+p7b <- plot_duration(csls_levels_all, 
+                     lakes = lakes, 
                      exceedance = 0.1, 
                      show_median = TRUE,
                      text_size = text_size)
