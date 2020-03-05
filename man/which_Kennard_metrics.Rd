@@ -11,4 +11,8 @@ which_Kennard_metrics
 \description{
 A character vector of potential metrics for Kennard_metrics()
 }
+\examples{
+Kennard_metrics(metrics = which_Kennard_metrics)
+
+}
 \keyword{datasets}

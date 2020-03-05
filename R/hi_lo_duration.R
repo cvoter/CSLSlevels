@@ -1,26 +1,36 @@
 #' Calculate duration of extreme lake levels
 #'
-#' Calculate how long a lake remains above or below, given either exceedance probabilities or elevations in meters above
-#' sea level.
+#' Calculate how long a lake remains above or below, given either exceedance
+#' probabilities or elevations in meters above sea level.
 #'
-#' @param lakeName Name of the lake of interest without "lake", e.g. "Plainfield", "Long", or "Pleasant"
-#' @param exceeds The exceedance probabilities of interest, as a vector of values between 0 and 1
-#' @param elevs The elevations of interest. If this argument is supplied, "exceeds" is ignored.
-#' @param pred_colname The column of CSLSlevels::csls_levels to look for predicted lake levels (in case that changes)
+#' @param lakeName Name of the lake of interest without "lake", e.g.
+#'                 "Plainfield", "Long", or "Pleasant"
+#' @param exceeds The exceedance probabilities of interest, as a vector of
+#'                values between 0 and 1
+#' @param elevs The elevations of interest. If this argument is supplied,
+#'              "exceeds" is ignored.
+#' @param pred_colname The column of CSLSlevels::csls_levels to look for
+#'                     predicted lake levels (in case that changes)
 #' @param date_colname Same as above, but for date
 #' @param lake_colname Same as above, but for lake
-#' @param startDate Enter a different start date for the analysis, or leave blank to use the entire sequence of
-#'                  predicted lake levels (1905- 2019)
-#' @param endDate Enter a different end date for the analysis, or leave blank to use the entire sequence of
-#'                  predicted lake levels (1905- 2019)
+#' @param startDate Enter a different start date for the analysis, or leave
+#'                  blank to use the entire sequence of predicted lake levels
+#'                  (1905- 2019)
+#' @param endDate Enter a different end date for the analysis, or leave blank to
+#'                use the entire sequence of predicted lake levels (1905- 2019)
 #' @return a list of the following:
-#' \item{ll_hi_lo} {The lake level predictions and dates used in the calculation, with extra columns added for
-#' each exceedance or elevation of interest. One column with a 1 for every monthly prediciton more extreme than the exceedance or
-#' elevation of interest, and one with number of meters above or below the exceedance or elevation of interest}
-#' \item{dur_counts} {A data frame with a row for every sequence of months above or below the exceedance or elevation of interest}
-#' \item{mmRes} {The same as above except with cumulative meters above or below the exceedance or elevation of interest for
-#' consecutive months}
-#' \item{levels} {The median predicted level and the elevations of interest used to perform the calculations.}
+#' \item{ll_hi_lo}{The lake level predictions and dates used in the calculation,
+#'                 with extra columns added for each exceedance or elevation of
+#'                 interest. One column with a 1 for every monthly prediciton
+#'                 more extreme than the exceedance or elevation of interest,
+#'                 and one with number of meters above or below the exceedance
+#'                 or elevation of interest}
+#' \item{dur_counts}{A data frame with a row for every sequence of months above
+#'                   or below the exceedance or elevation of interest}
+#' \item{mmRes}{The same as above except with cumulative meters above or below
+#'              the exceedance or elevation of interest for consecutive months}
+#' \item{levels}{The median predicted level and the elevations of interest used
+#'               to perform the calculations.}
 #'
 #' @import magrittr
 #' @importFrom stats quantile
@@ -79,7 +89,7 @@ hi_lo_duration <- function(lakeName,
     # for each elevation of interest, create a new column with 1s and 0s for if the predicted lake level is more
     # extreme than the elevation of interest
     for (i in 1:length(c.elevs)) {
-      if (c.elevs[i] >= median) {
+      if (c.elevs[i] > median) {
         ll[[names(c.elevs)[i]]] <- ifelse(ll[[pred_colname]] >= c.elevs[i], 1, 0)
       } else {
         ll[[names(c.elevs)[i]]] <- ifelse(ll[[pred_colname]] < c.elevs[i], 1, 0)

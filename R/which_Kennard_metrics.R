@@ -1,6 +1,6 @@
 #' A character vector of potential metrics for Kennard_metrics()
 #'
-#' @example
+#' @examples
 #' Kennard_metrics(metrics = which_Kennard_metrics)
 #'
 #' @docType data

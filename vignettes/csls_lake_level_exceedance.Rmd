@@ -155,10 +155,10 @@ year2 <- 1981
 
 levels1     <- year_prob_level1 %>%
                filter(.data$year == year1) %>%
-               select(prob, lake, level)
+               dplyr::select(prob, lake, level)
 levels2     <- year_prob_level2 %>%
                filter(.data$year == year2) %>%
-               select(prob, lake, level)
+               dplyr::select(prob, lake, level)
 levels      <- merge(levels1, levels2, by = c("prob", "lake"))
 levels$diff <- levels$level.y - levels$level.x
 table       <- dcast(subset(levels, select = c("prob", "lake", "diff")), 

@@ -4,11 +4,7 @@
 \alias{calculate_levels_at_probs}
 \title{Calculate lake level at given exceedance probability}
 \usage{
-calculate_levels_at_probs(
-  ranked,
-  probs = c(10, 50, 90),
-  lakes = c("Pleasant", "Long", "Plainfield")
-)
+calculate_levels_at_probs(ranked, probs = c(10, 50, 90))
 }
 \arguments{
 \item{ranked}{a data frame with the following columns
@@ -23,10 +19,6 @@ predicted level (percent)
 
 \item{probs}{the exceedance probabilities of interest (percent), defaults to
 10, 50, and 90.}
-
-\item{lakes}{the names of the lakes in the order you would like them
-displayed in plots, etc. Defaults to c("Pleasant", "Long",
-"Plainfield")}
 }
 \value{
 df, a data frame with the following columns:

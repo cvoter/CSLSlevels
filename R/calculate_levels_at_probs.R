@@ -14,9 +14,6 @@
 #'
 #' @param probs the exceedance probabilities of interest (percent), defaults to
 #'              10, 50, and 90.
-#' @param lakes the names of the lakes in the order you would like them
-#'              displayed in plots, etc. Defaults to c("Pleasant", "Long",
-#'              "Plainfield")
 #'
 #' @return df, a data frame with the following columns:
 #' \item{lake}{the name of the lake ("Pleasant", "Long", or "Plainfield)}
@@ -33,8 +30,7 @@
 #' @export
 
 calculate_levels_at_probs <- function(ranked,
-                                      probs = c(10, 50, 90),
-                                      lakes = c("Pleasant", "Long", "Plainfield")) {
+                                      probs = c(10, 50, 90)) {
   lakes   <- unique(ranked$lake)
   seasons <- unique(ranked$season)
   df <- NULL

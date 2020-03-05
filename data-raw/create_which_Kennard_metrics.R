@@ -8,7 +8,8 @@ which_Kennard_metrics <- c(
   "hiloDurMM",
   "hiloCV",
   "meanRate",
-  "cvRate"
+  "cvRate",
+  "mn_ann_Range"
 )
 
 library(devtools)

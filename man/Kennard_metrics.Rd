@@ -5,26 +5,28 @@
 \title{Calculate a lot of metrics found in appendix to Kennard (2009)}
 \usage{
 Kennard_metrics(
-  LakeLevels = csls_levels,
+  LakeLevels = CSLSlevels::csls_levels,
   startDate = NULL,
   endDate = NULL,
   LakeLevelColumn = "level_pred",
-  metrics = which_Kennard_metrics
+  metrics = CSLSlevels::which_Kennard_metrics
 )
 }
 \arguments{
 \item{LakeLevels}{Data frame to use, "csls_levels" by default.}
 
-\item{startDate}{Earliest date to use in calculations in YYY-MM-DD format. Null results in
-the entire range of dates being used.}
+\item{startDate}{Earliest date to use in calculations in YYY-MM-DD format.
+Null results in the entire range of dates being used.}
 
 \item{endDate}{Latest data to use in calculations in YYYY-MM-DD format.}
 
-\item{LakeLevelColumn}{Column of data frame to use. Default refers to column in
-"csls_levels". Will likely not need to be changed.}
+\item{LakeLevelColumn}{Column of data frame to use. Default refers to column
+in "csls_levels". Will likely not need to be changed.}
 
-\item{metrics}{A list of named, logical values corresponding to the metrics to be used. By default all metrics will be calculated.
-The object "which_Kennard_metrics" can be used here to easily exclude some metrics.}
+\item{metrics}{A list of named, logical values corresponding to the metrics
+to be used. By default all metrics will be calculated. The
+object "which_Kennard_metrics" can be used here to easily
+exclude some metrics.}
 }
 \value{
 A list of metric results.
@@ -34,8 +36,8 @@ Uses the CSLSlevels data frame and calculates metrics related to length,
 frequency and coeffiecient of variation of extreme lake levels.
 }
 \examples{
-Kennard_metrics()
-Kennard_metrics(metrics = c("meanMonth", "hiLevs"))
-Kennard_metrics(metrics = which_Kennard_metrics[1:4])
+  Kennard_metrics()
+  Kennard_metrics(metrics = c("meanMonth", "hiLevs"))
+  Kennard_metrics(metrics = which_Kennard_metrics[1:4])
 
 }

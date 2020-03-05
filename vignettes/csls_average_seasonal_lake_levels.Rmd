@@ -68,27 +68,12 @@ and code are available at [https://github.com/cvoter/CSLSlevels].
 
 ## Estimated Lake Levels
 
-```{r estimate, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 7, fig.height = 3.5}
-ggplot() +
-  geom_line(data = csls_levels,
-            aes(x = date, y = level_pred, color = "estimated")) +
-  geom_point(data = csls_levels,
-             aes(x = date, y = level_obs, color = "observation")) +
-  facet_wrap(~lake, scales = "free_y") +
-  labs(x = "",
-       y = "Estimated Lake Level (mamsl)",
-       color = "") +
-  scale_color_manual(values = c("grey70", "darkred"),
-                       guide = guide_legend(override.aes = list(
-                         linetype = c("solid", "blank"),
-                         shape = c(NA, 16)))) +
-  theme_bw() +
-  theme(text = element_text(family = "Segoe UI Semilight",
-                                      size = text_size),
-        plot.title = element_text(hjust = 0.5),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position = "top")
+```{r estimate, eval=TRUE, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6.5, fig.height = 6.5}
+plot_levels(csls_levels, 
+            text_size = text_size,
+            color_vals = c("grey70", "darkred"),
+            legend_pos = "top",
+            point_size = 1)
 ```
 
 ## Lake Level Frequency Curves
@@ -277,11 +262,11 @@ plot_lake_areas <- function(lake,
 get_level_table <- function(lake, levels_seasons, levels_annual) {
   new_levels1 <- levels_seasons %>%
                  filter(lake == !!lake) %>%
-                 select(season, prob, level) %>%
+                 dplyr::select(season, prob, level) %>%
                  dcast(season~prob)
   new_levels2 <- levels_annual %>%
                  filter(lake == !!lake) %>%
-                 select(prob, level) %>%
+                 dplyr::select(prob, level) %>%
                  t()
   p10 <- as.numeric(new_levels2[2,1])
   p50 <- as.numeric(new_levels2[2,2])

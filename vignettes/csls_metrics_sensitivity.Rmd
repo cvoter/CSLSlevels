@@ -1,0 +1,22 @@
+---
+title: "CSLS Lake Metrics - Sensitivity Analysis"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Defining Average Seasonal Lake Levels}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
+library(CSLSlevels)
+monte_carlo <- CSLSlevels::monte_carlo
+csls_levels <- CSLSlevels::csls_levels
+
+
+
+```
+
+# Overview
+
