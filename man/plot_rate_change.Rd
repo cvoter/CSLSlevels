@@ -24,8 +24,12 @@ plot_rate_change(
 
 \item{lakes}{name of lakes to analyze}
 
+\item{lag_months}{number of months to analyze rise/fall over, defaults to 1}
+
 \item{show_zero}{logical defaults to FALSE. If true, plots vertical line at
 median number of months.}
+
+\item{max_rate}{default to NULL, otherwise used to set max x limits}
 
 \item{title}{string to use for title of plot, defaults to "".}
 
@@ -39,10 +43,6 @@ median number of months.}
 red ("#c00000")}
 
 \item{line_size}{line size, defaults to 1}
-
-\item{exceedance}{exceedance probabilities to analyze, defaults to 0.9}
-
-\item{v}{default to NULL, otherwise used to set max x limits}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.

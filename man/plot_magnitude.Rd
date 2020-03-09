@@ -25,6 +25,9 @@ with two columns: "xintercept" with the values, and "lake"
 with the name of each lake in df. Default to NULL to not
 add a line.}
 
+\item{exceedance}{exceedance probability (e.g., 10 for 10\%) to identify with
+a horizontal line}
+
 \item{title}{string to use for title of plot, defaults to "".}
 
 \item{text_size}{size of text, defaults to 12}

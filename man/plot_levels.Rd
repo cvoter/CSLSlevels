@@ -14,6 +14,7 @@ plot_levels(
   legend_pos = c(0.15, 0.95),
   text_size = 12,
   color_vals = c("grey70", "black"),
+  hline_color = "#c00000",
   line_size = 1,
   point_size = 3
 )
@@ -45,6 +46,8 @@ be "top", "right", etc.}
 
 \item{color_vals}{colors to use for line and points, defaults to c("grey70",
 "black") for grey lines, black points}
+
+\item{hline_color}{color of horizontal line, if present. Defaults to a red.}
 
 \item{line_size}{line size, defaults to 1}
 
