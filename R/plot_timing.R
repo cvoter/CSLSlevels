@@ -7,9 +7,14 @@
 #'
 #'
 #' @param df a data frame with columns for "lake", "date", "level_obs", and
-#'           "level_pred".
+#'   "level_pred".
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
+#' @param npretty_breaks defaults to NULL, set to 3 to limit Long, Plainfield,
+#'   and Pleasant to integers (or play around, may be different with different
+#'   periods of record)
+#' @param force_pfl defaults to TRUE to force the y-limits of plainfield lake to
+#'   the same as long lake.
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
@@ -20,7 +25,9 @@
 #' @export
 plot_timing <- function(df,
                         title = "",
-                        text_size = 12) {
+                        text_size = 12,
+                        force_pfl = TRUE,
+                        npretty_breaks = NULL) {
 
   df$month <- as.character(month(df$date,label=TRUE,abbr=TRUE))
   df$month <- factor(df$month, levels = unique(df$month))
@@ -46,10 +53,20 @@ plot_timing <- function(df,
     new_range$upper <- range$midpoint + max_range/2
     range <- melt(new_range, id.vars = "lake")
     range$date <- median(df$date)
+
+    if (force_pfl) {
+      range$value[which(range$lake == "Plainfield" & range$variable == "upper")] <- range$value[which(range$lake == "Long" & range$variable == "upper")]
+      range$value[which(range$lake == "Plainfield" & range$variable == "lower")] <- range$value[which(range$lake == "Long" & range$variable == "lower")]
+    }
+
     plot_obj <- plot_obj +
                 geom_blank(data = range,
                            aes(x = month(.data$date), y = .data$value)) +
                 facet_wrap(~lake, scales = "free_y")
+  }
+
+  if (!is.null(npretty_breaks)) {
+    plot_obj <- plot_obj + scale_y_continuous(breaks = pretty_breaks(npretty_breaks))
   }
 
   # Add in aesthetics
@@ -61,7 +78,7 @@ plot_timing <- function(df,
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight",
                                         size = text_size),
-                    axis.text.x = element_text(angle = 45),
+                    axis.text.x = element_text(angle = 90),
                     plot.title = element_text(hjust = 0.5),
                     panel.grid.major = element_blank(),
                     panel.grid.minor = element_blank(),

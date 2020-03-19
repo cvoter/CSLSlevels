@@ -27,6 +27,10 @@
 #'                   "black") for grey lines, black points
 #' @param line_size line size, defaults to 1
 #' @param point_size point size, defaults to 3
+#' @param npretty_breaks defaults to NULL, set to 3 to limit Long, Plainfield,
+#'   and Pleasant to integers (or play around, may be different with different
+#'   periods of record)
+#' @param force_pfl defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
@@ -45,12 +49,14 @@ plot_levels <- function(df,
                         exceedance = NULL,
                         depth_axis = TRUE,
                         title = "",
-                        legend_pos = c(0.15, 0.95),
+                        legend_pos = c(0.1, 0.95),
                         text_size = 12,
                         color_vals = c("grey70", "black"),
                         hline_color = "#c00000",
                         line_size = 1,
-                        point_size = 3) {
+                        point_size = 3,
+                        npretty_breaks = NULL,
+                        force_pfl = TRUE) {
 
   # Basic plot w/lines for estimate, points for observations
   plot_obj <- ggplot(data = df) +
@@ -78,6 +84,11 @@ plot_levels <- function(df,
     new_range$upper <- range$midpoint + max_range/2
     range <- melt(new_range, id.vars = "lake")
     range$date <- median(df$date)
+
+    if (force_pfl) {
+      range$value[which(range$lake == "Plainfield" & range$variable == "upper")] <- range$value[which(range$lake == "Long" & range$variable == "upper")]
+      range$value[which(range$lake == "Plainfield" & range$variable == "lower")] <- range$value[which(range$lake == "Long" & range$variable == "lower")]
+    }
 
     plot_obj <- plot_obj +
                 geom_blank(data = range,
@@ -126,6 +137,10 @@ plot_levels <- function(df,
                    scale_y_continuous(sec.axis = sec_axis(~.-lake_range[1],
                                                        name = "Max Depth (m)"),
                                       limits = lake_range)
+  }
+
+  if (!is.null(npretty_breaks)) {
+    plot_obj <- plot_obj + scale_y_continuous(breaks = pretty_breaks(npretty_breaks))
   }
 
   # Add in aesthetics

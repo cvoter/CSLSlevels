@@ -20,11 +20,13 @@
 #' @param density_color color of density curve with alpha = 0.2, defaults to a
 #'                      red ("#c00000")
 #' @param line_size line size, default to 1
+#' @param force_pfl defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.
 #'
 #' @return plot_obj, a plot with the distribution(s) of estimated lake elevation
 #'
 #' @import ggplot2
 #' @import extrafont
+#' @importFrom reshape2 melt
 #'
 #' @export
 plot_magnitude <- function(df,
@@ -35,7 +37,8 @@ plot_magnitude <- function(df,
                            vline_color = "#c00000",
                            hist_color = "grey80",
                            density_color = "#c00000",
-                           line_size = 1) {
+                           line_size = 1,
+                           force_pfl = TRUE) {
   # Basic histogram w/lines for estimate, points for observations
   plot_obj <- ggplot(data = df, aes(x = .data$level_pred)) +
               geom_histogram(aes(y = ..density..),
@@ -49,12 +52,52 @@ plot_magnitude <- function(df,
 
   # If more than one lake, use facets
   if (length(unique(df$lake)) > 1) {
+    range     <- df %>%
+                 group_by(.data$lake) %>%
+                 summarize(lower = min(.data$level_pred),
+                           upper = max(.data$level_pred)) %>%
+                 mutate(midpoint = .data$lower + (.data$upper -.data$lower)/2) %>%
+                 ungroup() %>%
+                 mutate(range = .data$upper - .data$lower)
+    max_range <- ceiling(10*max(range$range))/10
+    new_range <- range[,1:3]
+    new_range$lower <- range$midpoint - max_range/2
+    new_range$upper <- range$midpoint + max_range/2
+    range <- melt(new_range, id.vars = "lake")
+
+    if (force_pfl) {
+      range$value[which(range$lake == "Plainfield" & range$variable == "upper")] <- range$value[which(range$lake == "Long" & range$variable == "upper")]
+      range$value[which(range$lake == "Plainfield" & range$variable == "lower")] <- range$value[which(range$lake == "Long" & range$variable == "lower")]
+    }
+
     plot_obj <- plot_obj +
-                facet_wrap(~lake, scales = "free_x")
+                facet_wrap(~lake, scales = "free_x") +
+                geom_blank(data = range,
+                           aes(x = .data$value, y = 1))
   }
 
   # If x-intercept desired, add in
   if (!is.null(xintercept)) {
+    plot_obj <- plot_obj +
+                geom_vline(aes(xintercept = xintercept),
+                           as.data.frame(xintercept),
+                           color = vline_color,
+                           linetype = "dashed",
+                           size = line_size)
+  }
+
+  if (!is.null(exceedance)) {
+    xintercept <- data.frame(NULL)
+    for (lake in lakes) {
+      lake_levels <- df %>% filter(.data$lake == !!lake)
+      ranked      <- calculate_probs_of_levels(lake_levels)
+      level       <- calculate_levels_at_probs(ranked, exceedance)$level
+      xintercept  <- rbind(xintercept, cbind(level, lake))
+    }
+    xintercept   <- xintercept %>%
+                    mutate(xintercept = as.numeric(as.character(.data$level)))
+    xintercept$lake <- factor(xintercept$lake, levels = lakes)
+
     plot_obj <- plot_obj +
                 geom_vline(aes(xintercept = xintercept),
                            as.data.frame(xintercept),
