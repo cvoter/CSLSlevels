@@ -122,16 +122,6 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
     }
   } else {hiloAnn <- NA}
 
-  # plain_hld <- hi_lo_duration("Plainfield",
-  #                             startDate = startDate,
-  #                             endDate = endDate)
-  # long_hld <- hi_lo_duration("Long",
-  #                            startDate = startDate,
-  #                            endDate = endDate)
-  # pleas_hld <- hi_lo_duration("Pleasant",
-  #                             startDate = startDate,
-  #                             endDate = endDate)
-  # Mean duration of low or high conditions in months
 
   if ("hiloDur" %in% metrics) {
     hiloDur <- NULL
@@ -150,18 +140,6 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
     }
     colnames(hiloDur) <- lakes
     rownames(hiloDur) <- (paste0("Dur_", rownames(hiloDur)))
-    # hiloDur <- data.frame(
-    #   Plainfield = tapply(plain_hld$dur_counts$consecutive_months,
-    #                       INDEX = plain_hld$dur_counts$name,
-    #                       FUN = mean),
-    #   Long = tapply(long_hld$dur_counts$consecutive_months,
-    #                 INDEX = long_hld$dur_counts$name,
-    #                 FUN = mean),
-    #   Pleasant = tapply(pleas_hld$dur_counts$consecutive_months,
-    #                     INDEX = pleas_hld$dur_counts$name,
-    #                     FUN = mean)
-    # ) %>%
-    #   `rownames<-`(paste0("Dur_", rownames(.)))
   } else {hiloDur <- NA}
 
 
@@ -183,20 +161,6 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
     }
     colnames(hiloDurMM) <- lakes
     rownames(hiloDurMM) <- (paste0("DurMM_", rownames(hiloDurMM)))
-
-
-  # hiloDurMM <- data.frame(
-  #   Plainfield = tapply(plain_hld$mmRes$month.meters,
-  #                       INDEX = plain_hld$mmRes$name,
-  #                       FUN = mean),
-  #   Long = tapply(long_hld$mmRes$month.meters,
-  #                 INDEX = long_hld$mmRes$name,
-  #                 FUN = mean),
-  #   Pleasant = tapply(pleas_hld$mmRes$month.meters,
-  #                     INDEX = pleas_hld$mmRes$name,
-  #                     FUN = mean)
-  # ) %>%
-  #   `rownames<-`(paste0("DurMM_", rownames(.)))
   } else {hiloDurMM <- NA}
 
 
@@ -218,28 +182,12 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
     }
     colnames(hiloCV) <- lakes
     rownames(hiloCV) <- (paste0("CV_", rownames(hiloCV)))
-
-  #   hiloCV <- data.frame(
-  #   Plainfield = tapply(plain_hld$mmRes$month.meters,
-  #                       INDEX = plain_hld$mmRes$name,
-  #                       FUN = function(x) sd(x)*100/mean(x)),
-  #   Long = tapply(long_hld$mmRes$month.meters,
-  #                 INDEX = long_hld$mmRes$name,
-  #                 FUN = function(x) sd(x)*100/mean(x)),
-  #   Pleasant = tapply(pleas_hld$mmRes$month.meters,
-  #                     INDEX = pleas_hld$mmRes$name,
-  #                     FUN = function(x) sd(x)*100/mean(x))
-  # ) %>%
-  #   `rownames<-`(paste0("CV_", rownames(.)))
   } else {hiloCV <- NA}
 
 
   # mean rise or fall rate
   if ("meanRate" %in% metrics) {
-    meanRate <- data.frame(Pleasant = numeric(0), Long = numeric(0), Pleasant = numeric(0))
-    # meanRate <- as.data.frame(numeric(0))
-    # colnames(meanRate) <- lakes
-
+    meanRate <- as.data.frame(NULL)
     for (m in c(1,2,3,6,12)) {
       meanRate_ <- tapply(X = ll$usell, INDEX = ll$lake,
                           FUN = function(x) {
@@ -253,14 +201,12 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
       # rownames(meanRate_) <- paste0(c("mean fall rate_", "mean rise rate_"), m, "m")
       meanRate <- rbind(meanRate, meanRate_)
     }
-
   } else {meanRate <- NA}
 
 
   # coefficient of rise or fall rates
   if ("cvRate" %in% metrics) {
-    cvRate <- data.frame(Pleasant = numeric(0), Long = numeric(0), Pleasant = numeric(0))
-
+    cvRate <- as.data.frame(NULL)
     for (m in c(1,2,3,6,12)) {
       cvRate_ <- tapply(X = ll$usell, INDEX = ll$lake,
                        FUN = function(x) {
@@ -276,28 +222,36 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
   } else {cvRate <- NA}
 
   if ("mn_ann_Range" %in% metrics) {
-    ann <- tapply(X = ll$usell, INDEX = list(ll$lake, ll$year), FUN = mean) %>%
-      simplify2array() %>%
-      t() %>%
-      apply(X = ., MARGIN = 2, FUN = quantile, probs = c(0.1, 0.25, 0.75, 0.9), type = 6)
+    ann <- tapply(X = ll$usell,
+                  INDEX = list(ll$lake, ll$year),
+                  FUN = mean) %>%
+           simplify2array() %>%
+           t() %>%
+           apply(X = ., MARGIN = 2,
+                 FUN = quantile,
+                 probs = c(0.1, 0.25, 0.75, 0.9),
+                 type = 6)
 
     mnth <- tapply(X = ll$usell, INDEX = ll$lake, simplify = TRUE,
                    FUN = quantile,
                    probs = c(0.1, 0.25, 0.75, 0.90), type = 6) %>%
-      simplify2array()
+            simplify2array()
 
 
-    for (lk in c("Plainfield", "Long", "Pleasant")) {
-      assign(x = paste0(lk), value = c(ann["90%", lk] - ann["10%", lk],
-                                       mnth["90%", lk] - mnth["10%", lk],
-                                       ann["75%", lk] - ann["25%", lk],
-                                       mnth["75%", lk] - mnth["25%", lk]) %>%
-               as.data.frame() %>%
-               `rownames<-`(c("ann9010", "mnth9010", "ann7525", "mnth7525")))
+    mn_ann_Range <- NULL
+    for (lk in lakes) {
+      this_lake <- as.data.frame(c(ann["90%", lk] - ann["10%", lk],
+                                   mnth["90%", lk] - mnth["10%", lk],
+                                   ann["75%", lk] - ann["25%", lk],
+                                   mnth["75%", lk] - mnth["25%", lk]))
+      rownames(this_lake) <- c("ann9010", "mnth9010", "ann7525", "mnth7525")
+      colnames(this_lake) <- lk
+      if (is.null(mn_ann_Range)) {
+        mn_ann_Range <- this_lake
+      } else {
+        mn_ann_Range <- cbind(mn_ann_Range, this_lake)
+      }
     }
-
-      mn_ann_Range <- cbind(Plainfield, Long, Pleasant) %>%
-        `colnames<-`(c("Plainfield", "Long", "Pleasant"))
   } else {mn_ann_Range <- NA}
 
   return(list(
