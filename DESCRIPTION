@@ -24,7 +24,8 @@ Imports:
     stringr,
     sf,
     CSLSdata,
-    reshape2
+    reshape2,
+    scales
 Suggests:
     knitr,
     rmarkdown,
@@ -34,5 +35,5 @@ Suggests:
     magick,
     patchwork
 VignetteBuilder: knitr
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Roxygen: list(markdown = TRUE)

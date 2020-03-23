@@ -4,12 +4,14 @@
 \name{lake_raster}
 \alias{lake_raster}
 \title{Dataset: CSLS lake elevation rasters}
-\format{A list with three rasters, one for each lake.
+\format{
+A list with three rasters, one for each lake.
 \describe{
 \item{Pleasant}{elevation raster for Pleasant Lake}
 \item{Long}{elevation raster for Long Lake}
 \item{Plainfield}{elevation raster for Plainfield Lake}
-}}
+}
+}
 \usage{
 data(lake_raster)
 }

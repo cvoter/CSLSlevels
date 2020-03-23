@@ -38,6 +38,7 @@
 #' @importFrom reshape2 melt
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
+#' @importFrom scales pretty_breaks
 #' @import dplyr
 #' @import ggplot2
 #' @import extrafont

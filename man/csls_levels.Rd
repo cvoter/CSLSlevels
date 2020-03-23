@@ -4,7 +4,8 @@
 \name{csls_levels}
 \alias{csls_levels}
 \title{Dataset: CSLS reconstructed lake levels}
-\format{A data frame with reconstructed historical lake levels for CSLS lakes.
+\format{
+A data frame with reconstructed historical lake levels for CSLS lakes.
 \describe{
 \item{lake}{"Long", "Plainfield", or "Pleasant"}
 \item{date}{month and year (1st of the month) of lake level
@@ -14,7 +15,8 @@ observation/prediction}
 \item{usgs_obs}{USGS lake level for this month? Value or NA}
 \item{swims_obs}{SWIMS lake level for this month? Value or NA}
 \item{airphoto_obs}{Air photo lake level for this month? Value or NA}
-}}
+}
+}
 \usage{
 data(csls_levels)
 }

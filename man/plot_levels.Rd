@@ -11,12 +11,14 @@ plot_levels(
   exceedance = NULL,
   depth_axis = TRUE,
   title = "",
-  legend_pos = c(0.15, 0.95),
+  legend_pos = c(0.1, 0.95),
   text_size = 12,
   color_vals = c("grey70", "black"),
   hline_color = "#c00000",
   line_size = 1,
-  point_size = 3
+  point_size = 3,
+  npretty_breaks = NULL,
+  force_pfl = TRUE
 )
 }
 \arguments{
@@ -52,6 +54,12 @@ be "top", "right", etc.}
 \item{line_size}{line size, defaults to 1}
 
 \item{point_size}{point size, defaults to 3}
+
+\item{npretty_breaks}{defaults to NULL, set to 3 to limit Long, Plainfield,
+and Pleasant to integers (or play around, may be different with different
+periods of record)}
+
+\item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.

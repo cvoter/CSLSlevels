@@ -4,7 +4,9 @@
 \name{which_Kennard_metrics}
 \alias{which_Kennard_metrics}
 \title{A character vector of potential metrics for Kennard_metrics()}
-\format{A vector of abbreviations of metrics to help with the Kennard_metrics() function}
+\format{
+A vector of abbreviations of metrics to help with the Kennard_metrics() function
+}
 \usage{
 which_Kennard_metrics
 }

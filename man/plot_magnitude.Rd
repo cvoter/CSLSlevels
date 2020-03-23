@@ -13,7 +13,8 @@ plot_magnitude(
   vline_color = "#c00000",
   hist_color = "grey80",
   density_color = "#c00000",
-  line_size = 1
+  line_size = 1,
+  force_pfl = TRUE
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ a horizontal line}
 red ("#c00000")}
 
 \item{line_size}{line size, default to 1}
+
+\item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
 }
 \value{
 plot_obj, a plot with the distribution(s) of estimated lake elevation

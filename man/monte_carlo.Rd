@@ -4,7 +4,8 @@
 \name{monte_carlo}
 \alias{monte_carlo}
 \title{Dataset: monte carlo sampling of lake levels 1905-2018}
-\format{A data frame with the 10, 50, and 90 percent exceedance probability
+\format{
+A data frame with the 10, 50, and 90 percent exceedance probability
 lake level under different random samples of years for CSLS lakes.
 \describe{
 \item{lake}{lake name, "Long", "Plainfield", "Pleasant", or "Devils"}
@@ -12,7 +13,8 @@ lake level under different random samples of years for CSLS lakes.
 \item{level}{lake level (mamsl) on that date}
 \item{sim}{simulation number}
 \item{nyears}{number of years sampled}
-}}
+}
+}
 \usage{
 data(monte_carlo)
 }

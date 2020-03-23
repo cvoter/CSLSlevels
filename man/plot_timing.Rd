@@ -4,7 +4,13 @@
 \alias{plot_timing}
 \title{Plot monthly timeseries}
 \usage{
-plot_timing(df, title = "", text_size = 12)
+plot_timing(
+  df,
+  title = "",
+  text_size = 12,
+  force_pfl = TRUE,
+  npretty_breaks = NULL
+)
 }
 \arguments{
 \item{df}{a data frame with columns for "lake", "date", "level_obs", and
@@ -13,6 +19,13 @@ plot_timing(df, title = "", text_size = 12)
 \item{title}{string to use for title of plot, defaults to "".}
 
 \item{text_size}{size of text, defaults to 12}
+
+\item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to
+the same as long lake.}
+
+\item{npretty_breaks}{defaults to NULL, set to 3 to limit Long, Plainfield,
+and Pleasant to integers (or play around, may be different with different
+periods of record)}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.
