@@ -11,12 +11,28 @@ vignette: >
 
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(CSLSlevels)
+library(dplyr)
+
 monte_carlo <- CSLSlevels::monte_carlo
 csls_levels <- CSLSlevels::csls_levels
-
-
-
+obs_summary <- calculate_metrics()
 ```
 
 # Overview
 
+```{r calc, echo=FALSE, warning=FALSE, message=FALSE}
+
+for (nyear in 1:max(monte_carlo$nyears)) {
+  this_year <- monte_carlo %>%
+               filter(.data$nyears == nyear)
+  for (nsim in 1:max(this_year$sim)) {
+    this_sim <- this_year %>%
+                filter(.data$sim == nsim)
+    sim_summary <- calculate_metrics(this_sim, col_name = "level")
+  }
+  
+}
+
+
+
+```
