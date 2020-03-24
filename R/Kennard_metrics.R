@@ -19,7 +19,6 @@
 #' @examples
 #'   Kennard_metrics()
 #'   Kennard_metrics(metrics = c("meanMonth", "hiLevs"))
-#'   Kennard_metrics(metrics = which_Kennard_metrics[1:4])
 #'
 #' @import magrittr
 #'
@@ -29,7 +28,17 @@ Kennard_metrics <- function(LakeLevels = CSLSlevels::csls_levels,
                             startDate = NULL,
                             endDate = NULL,
                             LakeLevelColumn = "level_pred",
-                            metrics = CSLSlevels::which_Kennard_metrics) {
+                            metrics = c("meanMonth",
+                                        "cvMonth",
+                                        "hiLevs",
+                                        "ARIs",
+                                        "hiloAnn",
+                                        "hiloDur",
+                                        "hiloDurMM",
+                                        "hiloCV",
+                                        "meanRate",
+                                        "cvRate",
+                                        "mn_ann_Range")) {
   ll <- LakeLevels
   lakes <- unique(ll$lake)
 

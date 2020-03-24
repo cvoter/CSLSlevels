@@ -9,7 +9,8 @@ Kennard_metrics(
   startDate = NULL,
   endDate = NULL,
   LakeLevelColumn = "level_pred",
-  metrics = CSLSlevels::which_Kennard_metrics
+  metrics = c("meanMonth", "cvMonth", "hiLevs", "ARIs", "hiloAnn", "hiloDur",
+    "hiloDurMM", "hiloCV", "meanRate", "cvRate", "mn_ann_Range")
 )
 }
 \arguments{
@@ -38,6 +39,5 @@ frequency and coeffiecient of variation of extreme lake levels.
 \examples{
   Kennard_metrics()
   Kennard_metrics(metrics = c("meanMonth", "hiLevs"))
-  Kennard_metrics(metrics = which_Kennard_metrics[1:4])
 
 }
