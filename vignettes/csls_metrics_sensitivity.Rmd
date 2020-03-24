@@ -12,27 +12,212 @@ vignette: >
 ```{r setup, echo=FALSE, warning=FALSE, message=FALSE}
 library(CSLSlevels)
 library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(extrafont)
 
 monte_carlo <- CSLSlevels::monte_carlo
 csls_levels <- CSLSlevels::csls_levels
 obs_summary <- calculate_metrics()
+fit         <- CSLSlevels::fit
+summary     <- CSLSlevels::summary
+
+text_size <- 12
+
+
+plot_sensitivity <- function(fit, 
+                             metric_name, 
+                             metric_title, 
+                             variable_title, 
+                             variable_breaks, 
+                             variable_labels) {
+  plot_fit          <- fit %>% 
+                       filter(.data$metric == metric_name)
+  if (variable_breaks == "sort") {
+    variable_breaks <- sort(as.numeric(unique(plot_fit$variable)))
+  }
+  if (variable_labels == "breaks") {
+    variable_labels <- variable_breaks
+  } else if (variable_labels == "percent") {
+    variable_labels <- sprintf("%d%%", variable_breaks)
+  }
+  plot_fit$variable <- factor(plot_fit$variable, 
+                            levels = variable_breaks, 
+                            labels = variable_labels)
+  
+  plot_obj <- ggplot(plot_fit) +
+              geom_line(aes(x = .data$nyear,
+                            y = .data$value,
+                            color = .data$variable),
+                        size = 1) +
+              facet_grid(fit ~ lake, scales = "free_y") +
+              labs(x = "Number of years", 
+                   y = "Goodness-of-fit value",
+                   title = metric_title) +
+              scale_x_continuous(expand = c(0, 0)) +
+              scale_color_brewer(name = variable_title,
+                                 palette = "Paired") +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                          size = text_size),
+                    plot.title = element_text(hjust = 0.5))
+  return(plot_obj)
+}
 ```
 
 # Overview
+These plots illustrate the "goodness-of-fit" (for lack of a better term) of
+hydrologic metrics calculated with random subsets of the timeseries vs. the
+entire time series. Note that the actual values (actual median levels,
+exceedance probablilities, etc.) are not shown here. Just how well these
+calculated metrics match the metric calculated using the entire timeseries.
 
-```{r calc, echo=FALSE, warning=FALSE, message=FALSE}
-
+```{r calc, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+summary <- NULL
 for (nyear in 1:max(monte_carlo$nyears)) {
-  this_year <- monte_carlo %>%
-               filter(.data$nyears == nyear)
+  this_year   <- monte_carlo %>%
+                 filter(.data$nyears == nyear)
+  sim_summary <- NULL
   for (nsim in 1:max(this_year$sim)) {
-    this_sim <- this_year %>%
-                filter(.data$sim == nsim)
-    sim_summary <- calculate_metrics(this_sim, col_name = "level")
+    this_sim          <- this_year %>%
+                         filter(.data$sim == nsim)
+    this_summary      <- calculate_metrics(this_sim, col_name = "level")
+    this_summary$nsim <- nsim
+    sim_summary       <- rbind(sim_summary, this_summary)
   }
-  
+  sim_summary$nyear <- nyear
+  summary <- rbind(summary, sim_summary)
 }
+colnames(summary)[which(colnames(summary) == "value")]         <- "sim"
+colnames(obs_summary)[which(colnames(obs_summary) == "value")] <- "obs"
+summary <- merge(summary, 
+                 obs_summary, 
+                 by = c("lake", "metric", "variable"),
+                 all.x = TRUE)
 
+fit <- summary %>%
+       group_by(.data$lake, .data$metric, .data$variable, .data$nyear) %>%
+       summarise(PBIAS = 100*mean(abs((.data$obs - .data$sim)/.data$obs),
+                                  na.rm = TRUE),
+                 CV = 100*sd(.data$sim, na.rm = TRUE)/
+                      mean(.data$sim, na.rm = TRUE),
+                 RMSE = mean(sqrt((.data$obs - .data$sim)^2),
+                             na.rm = TRUE)) %>%
+       ungroup() %>%
+       as.data.frame()
+fit <- melt(fit, id.vars = c("lake", "metric", "variable", "nyear"))
+colnames(fit) <- c("lake", "metric", "variable", "nyear", "fit", "value")
+```
 
+```{r median_level, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "median_level"
+metric_title    <- "Median Level"
+variable_title  <- "Month"
+variable_breaks <- "sort"
+variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
 
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r cv_level, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "cv_level"
+metric_title    <- "CV Level"
+variable_title  <- "Month"
+variable_breaks <- "sort"
+variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r exceedance_level, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "exceedance_level"
+metric_title    <- "Exceedance Level"
+variable_title  <- "Exceed. Prob"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r exceedance_range, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "exceedance_range"
+metric_title    <- "Exceedance Range"
+variable_title  <- "Exceed. Prob"
+variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
+variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
+                     "Monthly 10%-90%", "Monthly 25%-75%")
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r median_dur, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "median_dur"
+metric_title    <- "Median Duration"
+variable_title  <- "Exceed. Prob"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r cv_dur, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "cv_dur"
+metric_title    <- "CV Duration"
+variable_title  <- "Exceed. Prob"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r median_rise_rate, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "median_rise_rate"
+metric_title    <- "Median Rise Rate"
+variable_title  <- "Months"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r cv_rise_rate, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "cv_rise_rate"
+metric_title    <- "CV Rise Rate"
+variable_title  <- "Months"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r median_fall_rate, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "median_fall_rate"
+metric_title    <- "Median Fall Rate"
+variable_title  <- "Months"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
+```
+
+```{r cv_fall_rate, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=6}
+metric_name     <- "cv_fall_rate"
+metric_title    <- "CV Fall Rate"
+variable_title  <- "Months"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+plot_sensitivity(fit, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels)
 ```

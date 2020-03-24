@@ -319,11 +319,26 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
 calculate_exceedances <- function(df) {
   exceeds <- df %>%
              group_by(.data$lake) %>%
-             summarise(p10 = quantile(.data$level, probs = (1 - 0.10), type = 6),
-                       p25 = quantile(.data$level, probs = (1 - 0.25), type = 6),
-                       p50 = quantile(.data$level, probs = (1 - 0.50), type = 6),
-                       p75 = quantile(.data$level, probs = (1 - 0.75), type = 6),
-                       p90 = quantile(.data$level, probs = (1 - 0.90), type = 6)) %>%
+             summarise(p10 = quantile(.data$level,
+                                      probs = (1 - 0.10),
+                                      type = 6,
+                                      na.rm = TRUE),
+                       p25 = quantile(.data$level,
+                                      probs = (1 - 0.25),
+                                      type = 6,
+                                      na.rm = TRUE),
+                       p50 = quantile(.data$level,
+                                      probs = (1 - 0.50),
+                                      type = 6,
+                                      na.rm = TRUE),
+                       p75 = quantile(.data$level,
+                                      probs = (1 - 0.75),
+                                      type = 6,
+                                      na.rm = TRUE),
+                       p90 = quantile(.data$level,
+                                      probs = (1 - 0.90),
+                                      type = 6,
+                                      na.rm = TRUE)) %>%
              ungroup() %>%
              as.data.frame()
   return(exceeds)

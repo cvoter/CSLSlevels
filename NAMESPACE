@@ -2,7 +2,6 @@
 
 export(Kennard_metrics)
 export(add_lake_contours)
-export(calculate_fit)
 export(calculate_levels_at_probs)
 export(calculate_metrics)
 export(calculate_probs_of_levels)
