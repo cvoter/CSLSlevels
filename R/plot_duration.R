@@ -9,7 +9,7 @@
 #' @param df a data frame with columns for "lake", "date", "level_obs", and
 #'           "level_pred" that matches desired time series to analyze
 #' @param lakes name of lakes to analyze
-#' @param exceedance exceedance probabilities to analyze, defaults to 0.9
+#' @param probs exceedance probabilities to analyze, defaults to 90
 #' @param show_median logical defaults to FALSE. If true, plots vertical line at
 #'                    median number of months.
 #' @param max_months default to NULL, otherwise used to set max
@@ -31,7 +31,7 @@
 #' @export
 plot_duration <- function(df,
                           lakes,
-                          exceedance = 0.9,
+                          probs = 90,
                           show_median = FALSE,
                           max_months = NULL,
                           title = "",
@@ -41,23 +41,12 @@ plot_duration <- function(df,
                           density_color = "#c00000",
                           line_size = 1) {
 
-  start_date <- min(df$date)
-  end_date   <- max(df$date)
-
-  plot_df <- NULL
-  for (lake in lakes) {
-    df <- hi_lo_duration(lake,
-                         exceeds = exceedance,
-                         startDate = start_date,
-                         endDate = end_date)
-    df$dur_counts$lake <- lake
-    plot_df <- rbind(plot_df, df$dur_counts)
-  }
-  plot_df$lake <- factor(plot_df$lake, levels = lakes)
+  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
+  durations <- calculate_durations(df, probs)
 
   # Basic histogram w/lines for estimate, points for observations
-  plot_obj <- ggplot(data = plot_df,
-                     aes(x = .data$consecutive_months)) +
+  plot_obj <- ggplot(data = durations,
+                     aes(x = .data$value)) +
               geom_histogram(aes(y = ..density..),
                              binwidth = 2,
                              colour = NA,
@@ -75,7 +64,7 @@ plot_duration <- function(df,
 
   # If x-intercept desired, add in
   if (show_median) {
-    median   <- median(plot_df$consecutive_months, na.rm = TRUE)
+    median   <- median(durations$value, na.rm = TRUE)
     plot_obj <- plot_obj +
                 geom_vline(aes(xintercept = median),
                            as.data.frame(median),

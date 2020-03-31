@@ -7,7 +7,7 @@
 plot_magnitude(
   df,
   xintercept = NULL,
-  exceedance = NULL,
+  probs = NULL,
   title = "",
   text_size = 12,
   vline_color = "#c00000",
@@ -26,7 +26,7 @@ with two columns: "xintercept" with the values, and "lake"
 with the name of each lake in df. Default to NULL to not
 add a line.}
 
-\item{exceedance}{exceedance probability (e.g., 10 for 10\%) to identify with
+\item{probs}{exceedance probabilities (e.g., 10 for 10\%) to identify with
 a horizontal line}
 
 \item{title}{string to use for title of plot, defaults to "".}

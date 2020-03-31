@@ -7,24 +7,18 @@
 calculate_metrics(
   df = CSLSlevels::csls_levels,
   col_name = "level_pred",
-  start_date = NULL,
-  end_date = NULL,
   metrics = c("median_level", "cv_level", "exceedance_level", "exceedance_range",
     "median_dur", "cv_dur", "median_rise_rate", "cv_rise_rate", "median_fall_rate",
     "cv_fall_rate")
 )
 }
 \arguments{
-\item{df}{data frame to use, defaults "CSLSlevels::csls_levels".}
+\item{df}{data frame to use, defaults "CSLSlevels::csls_levels". Must include
+columns for "date", "lake", and one with the lake levels (named in
+"col_name" argument).}
 
 \item{col_name}{name of column with lake level values to use. Defaults to
 "level_pred".}
-
-\item{start_date}{Earliest date to use in calculations in datetime format.
-Defaults to NULL to use entire range of dates in df.}
-
-\item{end_date}{Latest date to use in calculations in datetime format.
-Defaults to NULL to use entire range of dates in df.}
 
 \item{metrics}{a list of which metrics to use. Defaults to all of them
 c("median_level", "cv_level", "exceedance_level",
@@ -44,5 +38,30 @@ and "12" associated with it indicating the median rate over
 \item{value}{calculated value of the metric, numeric}
 }
 \description{
-Calculate hydrologic metrics evaluated in the CSLS
+This function calculates hydrologic metrics describing the magnitude,
+frequency, duration, rate of change, and timing of lake levels. Specific
+metrics calculated include:
+\itemize{
+\item \strong{median_level:} median monthly and overall lake levels
+\item \strong{cv_level:} coefficient of variation for monthly and overall lake levels
+\item \strong{exceedance_level:} lake levels corresponding to 10\%, 25\%, 50\%, 75\%,
+and 90\% exceedance probabilities
+\item \strong{exceedance_range:} range between 25\% and 75\% exceedance probabilities
+and 10\% and 90\% exceedance probabilities for all
+levels and annual mean levels.
+\item \strong{median_dur:} median duration at/above the 10\% and 25\% exceedance
+probabilities or at/below the 75\% and 90\% exceedance
+probabilities.
+\item \strong{cv_dur:} coefficient of vatiation for durations at/above the 10\% and
+25\% exceedance probabilities and at/below the 75\% and 90\%
+exceedance probabilities.
+\item \strong{median_rise_rate:} median lake level rise over 1 month, 3 months
+(seasonal), and 12 months (annual).
+\item \strong{cv_rise_rate:} coefficient of variation in lake level rise over 1
+month, 3 months (seasonal), and 12 months (annual).
+\item \strong{median_fall_rate:} median lake level rise over 1 month, 3 months
+(seasonal), and 12 months (annual).
+\item \strong{cv_fall_rate:} coefficient of variation in lake level rise over 1
+month, 3 months (seasonal), and 12 months (annual).
+}
 }

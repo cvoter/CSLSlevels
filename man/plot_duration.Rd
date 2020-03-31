@@ -7,7 +7,7 @@
 plot_duration(
   df,
   lakes,
-  exceedance = 0.9,
+  probs = 90,
   show_median = FALSE,
   max_months = NULL,
   title = "",
@@ -24,7 +24,7 @@ plot_duration(
 
 \item{lakes}{name of lakes to analyze}
 
-\item{exceedance}{exceedance probabilities to analyze, defaults to 0.9}
+\item{probs}{exceedance probabilities to analyze, defaults to 90}
 
 \item{show_median}{logical defaults to FALSE. If true, plots vertical line at
 median number of months.}

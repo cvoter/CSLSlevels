@@ -11,8 +11,8 @@
 #'                   with two columns: "xintercept" with the values, and "lake"
 #'                   with the name of each lake in df. Default to NULL to not
 #'                   add a line.
-#' @param exceedance exceedance probability (e.g., 10 for 10%) to identify with
-#'                   a horizontal line
+#' @param probs exceedance probabilities (e.g., 10 for 10%) to identify with
+#'              a horizontal line
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
 #' @param vline_color color of vertical line, defaults to a red ("#c00000")
@@ -31,7 +31,7 @@
 #' @export
 plot_magnitude <- function(df,
                            xintercept = NULL,
-                           exceedance = NULL,
+                           probs = NULL,
                            title = "",
                            text_size = 12,
                            vline_color = "#c00000",
@@ -39,8 +39,11 @@ plot_magnitude <- function(df,
                            density_color = "#c00000",
                            line_size = 1,
                            force_pfl = TRUE) {
+
+  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
+
   # Basic histogram w/lines for estimate, points for observations
-  plot_obj <- ggplot(data = df, aes(x = .data$level_pred)) +
+  plot_obj <- ggplot(data = df, aes(x = .data$level)) +
               geom_histogram(aes(y = ..density..),
                              binwidth = .1,
                              colour = NA,
@@ -54,8 +57,8 @@ plot_magnitude <- function(df,
   if (length(unique(df$lake)) > 1) {
     range     <- df %>%
                  group_by(.data$lake) %>%
-                 summarize(lower = min(.data$level_pred),
-                           upper = max(.data$level_pred)) %>%
+                 summarize(lower = min(.data$level),
+                           upper = max(.data$level)) %>%
                  mutate(midpoint = .data$lower + (.data$upper -.data$lower)/2) %>%
                  ungroup() %>%
                  mutate(range = .data$upper - .data$lower)
@@ -76,28 +79,13 @@ plot_magnitude <- function(df,
                            aes(x = .data$value, y = 1))
   }
 
-  # If x-intercept desired, add in
-  if (!is.null(xintercept)) {
-    plot_obj <- plot_obj +
-                geom_vline(aes(xintercept = xintercept),
-                           as.data.frame(xintercept),
-                           color = vline_color,
-                           linetype = "dashed",
-                           size = line_size)
+  if (!is.null(probs)) {
+    xintercept           <- calculate_exceedances(df, probs)
+    colnames(xintercept) <- c("lake", "variable", "xintercept")
+    xintercept$lake      <- factor(xintercept$lake, levels = levels(df$lake))
   }
 
-  if (!is.null(exceedance)) {
-    xintercept <- data.frame(NULL)
-    for (lake in lakes) {
-      lake_levels <- df %>% filter(.data$lake == !!lake)
-      ranked      <- calculate_probs_of_levels(lake_levels)
-      level       <- calculate_levels_at_probs(ranked, exceedance)$level
-      xintercept  <- rbind(xintercept, cbind(level, lake))
-    }
-    xintercept   <- xintercept %>%
-                    mutate(xintercept = as.numeric(as.character(.data$level)))
-    xintercept$lake <- factor(xintercept$lake, levels = lakes)
-
+  if (!is.null(xintercept)) {
     plot_obj <- plot_obj +
                 geom_vline(aes(xintercept = xintercept),
                            as.data.frame(xintercept),
@@ -113,8 +101,8 @@ plot_magnitude <- function(df,
                    title = title) +
               scale_y_continuous(expand = c(0,0)) +
               scale_x_continuous(expand = c(0,0),
-                                 breaks = seq(round(min(df$level_pred)),
-                                              round(max(df$level_pred)),
+                                 breaks = seq(round(min(df$level)),
+                                              round(max(df$level)),
                                               by = 1))+
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight",

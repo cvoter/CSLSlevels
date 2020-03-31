@@ -8,7 +8,7 @@ plot_levels(
   df,
   lakes = c("Pleasant", "Long", "Plainfield"),
   yintercept = NULL,
-  exceedance = NULL,
+  probs = NULL,
   depth_axis = TRUE,
   title = "",
   legend_pos = c(0.1, 0.95),
@@ -33,7 +33,7 @@ with two columns: "yintercept" with the values, and "lake"
 with the name of each lake in df. Default to NULL to not
 add a line.}
 
-\item{exceedance}{exceedance probability (e.g., 10 for 10\%) to identify with
+\item{probs}{exceedance probability (e.g., 10 for 10\%) to identify with
 a horizontal line}
 
 \item{depth_axis}{logical defaults to TRUE to add a second axis with lake

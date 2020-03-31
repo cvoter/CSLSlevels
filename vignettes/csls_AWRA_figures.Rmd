@@ -20,6 +20,7 @@ library(extrafont)
 lakes           <- c("Pleasant", "Long", "Plainfield")
 csls_levels     <- CSLSlevels::csls_levels
 csls_levels_all <- csls_levels %>% filter(.data$lake %in% lakes)
+csls_levels_all$lake <- factor(csls_levels_all$lake, levels = lakes)
 csls_levels     <- csls_levels_all %>% 
                    filter(year(date) <= 2018, year(date) >= 1981)
 
@@ -29,31 +30,31 @@ text_size <- 24
 ```{r plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
 p1 <- plot_levels(csls_levels_all, text_size = text_size)
 p2 <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3)
-p2a <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, exceedance = 90)
-p2b <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, exceedance = 10)
-p2c <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, exceedance = 50)
+p2a <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 90)
+p2b <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 10)
+p2c <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 50)
 p3 <- plot_magnitude(csls_levels, text_size = text_size)
-p3a <- plot_magnitude(csls_levels, text_size = text_size, exceedance = 90)
-p3b <- plot_magnitude(csls_levels, text_size = text_size, exceedance = 10)
-p3c <- plot_magnitude(csls_levels, text_size = text_size, exceedance = 50)
+p3a <- plot_magnitude(csls_levels, text_size = text_size, probs = 90)
+p3b <- plot_magnitude(csls_levels, text_size = text_size, probs = 10)
+p3c <- plot_magnitude(csls_levels, text_size = text_size, probs = 50)
 p4a <- plot_duration(csls_levels_all, 
                      lakes = lakes, 
-                     exceedance = 0.9, 
+                     probs = 90, 
                      show_median = FALSE,
                      text_size = text_size)
 p4b <- plot_duration(csls_levels_all, 
                      lakes = lakes, 
-                     exceedance = 0.1, 
+                     probs = 10, 
                      show_median = FALSE,
                      text_size = text_size)
 p4am <- plot_duration(csls_levels_all, 
                      lakes = lakes, 
-                     exceedance = 0.9, 
+                     probs = 90, 
                      show_median = TRUE,
                      text_size = text_size)
 p4bm <- plot_duration(csls_levels_all, 
                      lakes = lakes, 
-                     exceedance = 0.1, 
+                     probs = 10, 
                      show_median = TRUE,
                      text_size = text_size)
 p5a <- plot_rate_change(csls_levels, lakes, lag_months = 1, text_size = text_size)

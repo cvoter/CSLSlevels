@@ -42,19 +42,12 @@ plot_rate_change <- function(df,
                           density_color = "#c00000",
                           line_size = 1) {
 
-  plot_df <- NULL
-  for (lake in lakes) {
-    this_lake <- df %>% filter(.data$lake == !!lake)
-    this_rate <- diff(this_lake$level_pred, lag_months)
-    this_lake <- data.frame(rate = this_rate,
-                            lake = lake)
-    plot_df   <- rbind(plot_df, this_lake)
-  }
-  plot_df$lake <- factor(plot_df$lake, levels = lakes)
+  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
+  rates <- calculate_rates(df, lag_months)
 
   # Basic histogram w/lines for estimate, points for observations
-  plot_obj <- ggplot(data = plot_df,
-                     aes(x = .data$rate)) +
+  plot_obj <- ggplot(data = rates,
+                     aes(x = .data$value)) +
               geom_histogram(aes(y = ..density..),
                              binwidth = 0.1,
                              colour = NA,
@@ -82,7 +75,7 @@ plot_rate_change <- function(df,
 
   # Set x axis limits
   if (is.null(max_rate)) {
-    max_rate <- max(abs(c(min(plot_df$rate), max(plot_df$rate))))
+    max_rate <- max(abs(rates$value))
   }
 
   # Add in aesthetics

@@ -1,10 +1,33 @@
 #' Calculate hydrologic metrics evaluated in the CSLS
 #'
-#' @param df data frame to use, defaults "CSLSlevels::csls_levels".
-#' @param start_date Earliest date to use in calculations in datetime format.
-#'                   Defaults to NULL to use entire range of dates in df.
-#' @param end_date Latest date to use in calculations in datetime format.
-#'                 Defaults to NULL to use entire range of dates in df.
+#' This function calculates hydrologic metrics describing the magnitude,
+#' frequency, duration, rate of change, and timing of lake levels. Specific
+#' metrics calculated include:
+#'   * **median_level:** median monthly and overall lake levels
+#'   * **cv_level:** coefficient of variation for monthly and overall lake levels
+#'   * **exceedance_level:** lake levels corresponding to 10%, 25%, 50%, 75%,
+#'                           and 90% exceedance probabilities
+#'   * **exceedance_range:** range between 25% and 75% exceedance probabilities
+#'                           and 10% and 90% exceedance probabilities for all
+#'                           levels and annual mean levels.
+#'   * **median_dur:** median duration at/above the 10% and 25% exceedance
+#'                     probabilities or at/below the 75% and 90% exceedance
+#'                     probabilities.
+#'   * **cv_dur:** coefficient of vatiation for durations at/above the 10% and
+#'                 25% exceedance probabilities and at/below the 75% and 90%
+#'                 exceedance probabilities.
+#'   * **median_rise_rate:** median lake level rise over 1 month, 3 months
+#'                           (seasonal), and 12 months (annual).
+#'   * **cv_rise_rate:** coefficient of variation in lake level rise over 1
+#'                       month, 3 months (seasonal), and 12 months (annual).
+#'   * **median_fall_rate:** median lake level rise over 1 month, 3 months
+#'                           (seasonal), and 12 months (annual).
+#'   * **cv_fall_rate:** coefficient of variation in lake level rise over 1
+#'                       month, 3 months (seasonal), and 12 months (annual).
+#'
+#' @param df data frame to use, defaults "CSLSlevels::csls_levels". Must include
+#'           columns for "date", "lake", and one with the lake levels (named in
+#'           "col_name" argument).
 #' @param col_name name of column with lake level values to use. Defaults to
 #'                 "level_pred".
 #' @param metrics a list of which metrics to use. Defaults to all of them
@@ -33,8 +56,6 @@
 
 calculate_metrics <- function(df = CSLSlevels::csls_levels,
                               col_name = "level_pred",
-                              start_date = NULL,
-                              end_date = NULL,
                               metrics = c("median_level",
                                           "cv_level",
                                           "exceedance_level",
@@ -46,33 +67,24 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
                                           "median_fall_rate",
                                           "cv_fall_rate")) {
 
+  # 0. Setup data frames =======================================================
   # Rename column with level info
   colnames(df)[which(colnames(df) == col_name)] <- "level"
-
-  # Limit date range
-  if (is.null(start_date)) {
-    start_date <- min(df$date)
-  }
-  if (is.null(end_date)) {
-    end_date <- max(df$date)
-  }
-  df <- df %>%
-        filter(.data$date > start_date,
-               .data$date < end_date)
 
   # Include month information
   df$month <- month(df$date)
   df$year  <- year(df$date)
 
-  # Loop through metrics
+  # Initialize summary data frame
   summary <- NULL
 
-  # 1. Median monthly and annual levels ------------------------------------------
+  # 1. MAGNITUDE ===============================================================
+  # 1a. Monthly and annual median levels ---------------------------------------
   if ("median_level" %in% metrics) {
     # monthly median level
     vals <- df %>%
             group_by(.data$lake, .data$month) %>%
-            summarise(median_level = median(.data$level)) %>%
+            summarise(median_level = median(.data$level, na.rm = TRUE)) %>%
             mutate(metric = "median_level") %>%
             ungroup() %>%
             as.data.frame() %>%
@@ -85,7 +97,7 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     # overall median level (month 0)
     vals <- df %>%
             group_by(.data$lake) %>%
-            summarise(median_level = median(.data$level)) %>%
+            summarise(median_level = median(.data$level, na.rm = TRUE)) %>%
             mutate(metric = "median_level",
                    month = 0) %>%
             ungroup() %>%
@@ -97,12 +109,13 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
-  # 2. CV monthly and annual levels --------------------------------------------
+  # 1b. Monthly and annual CV levels -------------------------------------------
   if ("cv_level" %in% metrics) {
     # cv of monthly levels
     vals <- df %>%
             group_by(.data$lake, .data$month) %>%
-            summarise(cv_level = 100*sd(.data$level)/mean(.data$level)) %>%
+            summarise(cv_level = 100*sd(.data$level, na.rm = TRUE)/
+                                 mean(.data$level, na.rm = TRUE)) %>%
             mutate(metric = "cv_level") %>%
             ungroup() %>%
             as.data.frame() %>%
@@ -115,7 +128,8 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     # cv of all levels (month 0)
     vals <- df %>%
             group_by(.data$lake) %>%
-            summarise(cv_level = 100*sd(.data$level)/mean(.data$level)) %>%
+            summarise(cv_level = 100*sd(.data$level, na.rm = TRUE)/
+                                 mean(.data$level, na.rm = TRUE)) %>%
             mutate(metric = "cv_level",
                    month = 0) %>%
             ungroup() %>%
@@ -127,259 +141,140 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
-  # 3. Exceedances -------------------------------------------------------------
-  exceedances <- calculate_exceedances(df)
-
-  # 3a. Exceedance probability levels ------------------------------------------
+  # 2. FREQUENCY ===============================================================
+  # 2a. Exceedance probability levels ------------------------------------------
   if ("exceedance_level" %in% metrics) {
-    vals <- melt_and_add_metric(exceedances, "exceedance_level", prefix = "p")
+    exceeds <- calculate_exceedances(df, probs = c(10, 25, 50, 75, 90))
+    vals    <- exceeds %>%
+               mutate(metric = "exceedance_level") %>%
+               select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 3b. Exceedance probability ranges ------------------------------------------
+  # 2b. Exceedance probability ranges ------------------------------------------
   if ("exceedance_range" %in% metrics) {
     # by all monthly values
-    vals <- exceedances %>%
-            group_by(.data$lake) %>%
-            mutate(m_10_90 = .data$p10 - .data$p90,
-                   m_25_75 = .data$p25 - .data$p75) %>%
-            ungroup() %>%
-            as.data.frame() %>%
-            select(.data$lake, .data$m_10_90, .data$m_25_75)
-    vals <- melt_and_add_metric(vals, "exceedance_range")
+    exceeds <- calculate_exceedances(df,
+                                     probs = c(10, 25, 75, 90),
+                                     melted = FALSE)
+    ranges  <- exceeds %>%
+               group_by(.data$lake) %>%
+               mutate(m_10_90 = .data$`10` - .data$`90`,
+                      m_25_75 = .data$`25` - .data$`75`) %>%
+               ungroup() %>%
+               as.data.frame() %>%
+               select(.data$lake, .data$m_10_90, .data$m_25_75)
+    vals    <- ranges %>%
+               melt(id.vars = "lake") %>%
+               mutate(metric = "exceedance_range") %>%
+               select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
 
     # by annual mean values
-    vals <- df %>%
-            group_by(.data$lake, .data$year) %>%
-            summarise(level = mean(.data$level)) %>%
-            ungroup() %>%
-            as.data.frame()
-    vals <- calculate_exceedances(vals)
-    vals <- vals %>%
-            group_by(.data$lake) %>%
-            mutate(a_10_90 = .data$p10 - .data$p90,
-                   a_25_75 = .data$p25 - .data$p75) %>%
-            ungroup() %>%
-            as.data.frame() %>%
-            select(.data$lake, .data$a_10_90, .data$a_25_75)
-    vals <- melt_and_add_metric(vals, "exceedance_range")
+    annual  <- df %>%
+               group_by(.data$lake, .data$year) %>%
+               summarise(level = mean(.data$level, na.rm = TRUE)) %>%
+               ungroup() %>%
+               as.data.frame()
+    exceeds <- calculate_exceedances(annual,
+                                     probs = c(10, 25, 75, 90),
+                                     melted = FALSE)
+    ranges  <- exceeds %>%
+               group_by(.data$lake) %>%
+               mutate(a_10_90 = .data$`10` - .data$`90`,
+                      a_25_75 = .data$`25` - .data$`75`) %>%
+               ungroup() %>%
+               as.data.frame() %>%
+               select(.data$lake, .data$a_10_90, .data$a_25_75)
+    vals    <- ranges %>%
+               melt(id.vars = "lake") %>%
+               mutate(metric = "exceedance_range") %>%
+               select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 4. Durations ---------------------------------------------------------------
-  vals      <- merge(df, exceedances)
-  durations <- vals %>%
-               arrange(.data$date) %>%
-               mutate(above_10 = ifelse(.data$level > .data$p10, 1, 0),
-                      above_25 = ifelse(.data$level > .data$p25, 1, 0),
-                      below_75 = ifelse(.data$level < .data$p75, 1, 0),
-                      below_90 = ifelse(.data$level < .data$p90, 1, 0)) %>%
-               select(.data$lake, .data$date, .data$above_10, .data$above_25,
-                      .data$below_75, .data$below_90)
-  # 4a. Mean duration above/below levels ---------------------------------------
+  # 3. DURATION ================================================================
+  durations <- calculate_durations(df, probs = c(10, 25, 75, 90))
+
+  # 3a. Mean duration above/below levels ---------------------------------------
   if ("median_dur" %in% metrics) {
     vals <- durations %>%
-            group_by(.data$lake) %>%
-            mutate(median_10 = median(rle(.data$above_10)$lengths),
-                   median_25 = median(rle(.data$above_25)$lengths),
-                   median_75 = median(rle(.data$below_75)$lengths),
-                   median_90 = median(rle(.data$below_90)$lengths)) %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = median(.data$value, na.rm = TRUE)) %>%
             ungroup() %>%
             as.data.frame() %>%
-            select(.data$lake, .data$median_10, .data$median_25,
-                   .data$median_75, .data$median_90) %>%
-            unique()
-    vals <- melt_and_add_metric(vals, "median_dur", "median_")
+            mutate(metric = "median_dur") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 4b. CV duration above/below levels -----------------------------------------
+  # 3b. CV duration above/below levels -----------------------------------------
   if ("cv_dur" %in% metrics) {
     vals <- durations %>%
-            group_by(.data$lake) %>%
-            mutate(cv_10 = 100*sd(rle(.data$above_10)$lengths)/
-                           mean(rle(.data$above_10)$lengths),
-                   cv_25 = 100*sd(rle(.data$above_25)$lengths)/
-                           mean(rle(.data$above_25)$lengths),
-                   cv_75 = 100*sd(rle(.data$below_75)$lengths)/
-                           mean(rle(.data$below_75)$lengths),
-                   cv_90 = 100*sd(rle(.data$below_90)$lengths)/
-                           mean(rle(.data$below_90)$lengths)) %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = 100*sd(.data$value, na.rm = TRUE)/
+                              mean(.data$value, na.rm = TRUE)) %>%
             ungroup() %>%
             as.data.frame() %>%
-            select(.data$lake, .data$cv_10, .data$cv_25,
-                   .data$cv_75, .data$cv_90) %>%
-            unique()
-    vals <- melt_and_add_metric(vals, "cv_dur", "cv_")
+            mutate(metric = "cv_dur") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 5. Rate of Change ----------------------------------------------------------
-  rates <- df %>%
-           group_by(.data$lake) %>%
-           arrange(.data$date) %>%
-           mutate(rate01 = lead(.data$level, 1) - .data$level,
-                  rate03 = lead(.data$level, 3) - .data$level,
-                  rate12 = lead(.data$level, 12) - .data$level) %>%
-           ungroup() %>%
-           as.data.frame() %>%
-           select(.data$lake, .data$date, .data$rate01, .data$rate03,
-                  .data$rate12)
-  rising <- rates %>%
-            mutate(rate01 = ifelse(.data$rate01 > 0, .data$rate01, NA),
-                   rate03 = ifelse(.data$rate03 > 0, .data$rate03, NA),
-                   rate12 = ifelse(.data$rate12 > 0, .data$rate12, NA))
-  falling <- rates %>%
-             mutate(rate01 = ifelse(.data$rate01 < 0, .data$rate01, NA),
-                    rate03 = ifelse(.data$rate03 < 0, .data$rate03, NA),
-                    rate12 = ifelse(.data$rate12 < 0, .data$rate12, NA))
+  # 4. RATE OF CHANGE ==========================================================
+  rates   <- calculate_rates(df, months = c(1, 3, 12))
+  rising  <- rates %>% filter(.data$value > 0)
+  falling <- rates %>% filter(.data$value < 0)
 
-  # 5a. Median rise rates ------------------------------------------------------
+  # 4a. Median rise rates ------------------------------------------------------
   if ("median_rise_rate" %in% metrics) {
     vals <- rising %>%
-            group_by(.data$lake) %>%
-            summarise(median1 = median(.data$rate01, na.rm = TRUE),
-                      median3 = median(.data$rate03, na.rm = TRUE),
-                      median12 = median(.data$rate12, na.rm = TRUE)) %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = median(.data$value, na.rm = TRUE)) %>%
             ungroup() %>%
             as.data.frame() %>%
-            select(.data$lake, .data$median1, .data$median3, .data$median12)
-    vals <- melt_and_add_metric(vals, "median_rise_rate", "median")
+            mutate(metric = "median_rise_rate") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 5b. CV rise rates ------------------------------------------------------
+  # 4b. CV rise rates ------------------------------------------------------
   if ("cv_rise_rate" %in% metrics) {
     vals <- rising %>%
-            group_by(.data$lake) %>%
-            summarise(cv1 = 100*sd(.data$rate01, na.rm = TRUE)/
-                            mean(.data$rate01, na.rm = TRUE),
-                      cv3 = 100*sd(.data$rate03, na.rm = TRUE)/
-                            mean(.data$rate03, na.rm = TRUE),
-                      cv12 = 100*sd(.data$rate12, na.rm = TRUE)/
-                             mean(.data$rate12, na.rm = TRUE)) %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = 100*sd(.data$value, na.rm = TRUE)/
+                              mean(.data$value, na.rm = TRUE)) %>%
             ungroup() %>%
             as.data.frame() %>%
-            select(.data$lake, .data$cv1, .data$cv3, .data$cv12)
-    vals <- melt_and_add_metric(vals, "cv_rise_rate", "cv")
+            mutate(metric = "cv_rise_rate") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 5c. Median fall rates ------------------------------------------------------
+  # 4c. Median fall rates ------------------------------------------------------
   if ("median_fall_rate" %in% metrics) {
     vals <- falling %>%
-            group_by(.data$lake) %>%
-            summarise(median1 = median(.data$rate01, na.rm = TRUE),
-                      median3 = median(.data$rate03, na.rm = TRUE),
-                      median12 = median(.data$rate12, na.rm = TRUE)) %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = median(.data$value, na.rm = TRUE)) %>%
             ungroup() %>%
             as.data.frame() %>%
-            select(.data$lake, .data$median1, .data$median3, .data$median12)
-    vals <- melt_and_add_metric(vals, "median_fall_rate", "median")
+            mutate(metric = "median_fall_rate") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
-  # 5d. CV fall rates ------------------------------------------------------
+  # 4d. CV fall rates ------------------------------------------------------
   if ("cv_fall_rate" %in% metrics) {
     vals <- falling %>%
-            group_by(.data$lake) %>%
-            summarise(cv1 = 100*sd(.data$rate01, na.rm = TRUE)/
-                            mean(.data$rate01, na.rm = TRUE),
-                      cv3 = 100*sd(.data$rate03, na.rm = TRUE)/
-                            mean(.data$rate03, na.rm = TRUE),
-                      cv12 = 100*sd(.data$rate12, na.rm = TRUE)/
-                             mean(.data$rate12, na.rm = TRUE)) %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = 100*sd(.data$value, na.rm = TRUE)/
+                        mean(.data$value, na.rm = TRUE)) %>%
             ungroup() %>%
             as.data.frame() %>%
-            select(.data$lake, .data$cv1, .data$cv3, .data$cv12)
-    vals <- melt_and_add_metric(vals, "cv_fall_rate", "cv")
+            mutate(metric = "cv_fall_rate") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
 
   return(summary)
-
-}
-
-################################################################################
-#' Calculate exceedance levels
-#'
-#' Given a data frame with a "lake" and "level" column, calculates the 10%, 25%,
-#' 50%, 75%, and 90% exceedance levels
-#'
-#' @param df a data frame with a "lake" and a "level" column
-#'
-#' @return vals, a data frame with the names of all lakes and corresponding 10%,
-#'   25%, 50%, 75%, and 90% exceedance levels
-#'
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
-#' @import dplyr
-
-calculate_exceedances <- function(df) {
-  exceeds <- df %>%
-             group_by(.data$lake) %>%
-             summarise(p10 = quantile(.data$level,
-                                      probs = (1 - 0.10),
-                                      type = 6,
-                                      na.rm = TRUE),
-                       p25 = quantile(.data$level,
-                                      probs = (1 - 0.25),
-                                      type = 6,
-                                      na.rm = TRUE),
-                       p50 = quantile(.data$level,
-                                      probs = (1 - 0.50),
-                                      type = 6,
-                                      na.rm = TRUE),
-                       p75 = quantile(.data$level,
-                                      probs = (1 - 0.75),
-                                      type = 6,
-                                      na.rm = TRUE),
-                       p90 = quantile(.data$level,
-                                      probs = (1 - 0.90),
-                                      type = 6,
-                                      na.rm = TRUE)) %>%
-             ungroup() %>%
-             as.data.frame()
-  return(exceeds)
-}
-
-################################################################################
-#' Calculate exceedance levels
-#'
-#' Given a data frame with a "lake" and "level" column, calculates the 10%, 25%,
-#' 50%, 75%, and 90% exceedance levels
-#'
-#' @param vals a data frame with a "lake" and a "level" column
-#' @param metric_name name of metric to append in a "metric" column. Defaults
-#'                    to NULL to not include.
-#' @param prefix prefix of melted column names to remove from entries in melted
-#'               "variable" column. Defaults to null to keep names as-is.
-#'
-#' @return vals, a data frame with the columns:
-#' \item{lake}{name of the lake}
-#' \item{metric}{name of metric passed to function}
-#' \item{variable}{name of variations on the metric, columnames in df}
-#' \item{value}{value of each metric for each lake}
-#'
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
-#' @importFrom dplyr mutate select
-#' @importFrom reshape2 melt
-#' @importFrom stringr str_replace
-
-melt_and_add_metric <- function(vals, metric_name = NULL, prefix = NULL) {
-  vals <- melt(vals, id.vars = "lake")
-  vals <- vals %>%
-          select(.data$lake, .data$variable, .data$value)
-  if (!is.null(prefix)) {
-    vals <- vals %>%
-            mutate(variable = str_replace(.data$variable, prefix, ""))
-  }
-  if (!is.null(metric_name)) {
-    vals <- vals %>%
-            mutate(metric = metric_name) %>%
-            select(.data$lake, .data$metric, .data$variable, .data$value)
-  }
-  return(vals)
 }

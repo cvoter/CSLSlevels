@@ -15,8 +15,8 @@
 #'                   with the name of each lake in df. Default to NULL to not
 #'                   add a line.
 #' @param hline_color color of horizontal line, if present. Defaults to a red.
-#' @param exceedance exceedance probability (e.g., 10 for 10%) to identify with
-#'                   a horizontal line
+#' @param probs exceedance probability (e.g., 10 for 10%) to identify with
+#'              a horizontal line
 #' @param depth_axis logical defaults to TRUE to add a second axis with lake
 #'                   depth if there's only one lake in the df
 #' @param title string to use for title of plot, defaults to "".
@@ -47,7 +47,7 @@
 plot_levels <- function(df,
                         lakes = c("Pleasant", "Long", "Plainfield"),
                         yintercept = NULL,
-                        exceedance = NULL,
+                        probs = NULL,
                         depth_axis = TRUE,
                         title = "",
                         legend_pos = c(0.1, 0.95),
@@ -97,29 +97,15 @@ plot_levels <- function(df,
                 facet_wrap(~lake, scales = "free_y")
   }
 
-  # If y-intercept desired, add in
-  if (!is.null(yintercept)) {
-    plot_obj <- plot_obj +
-                geom_hline(aes(yintercept = yintercept),
-                           as.data.frame(yintercept),
-                           color = hline_color,
-                           linetype = "dashed",
-                           size = line_size)
+  if (!is.null(probs)) {
+    df2 <- df
+    colnames(df2)[which(colnames(df2) == "level_pred")] <- "level"
+    yintercept           <- calculate_exceedances(df2, probs)
+    colnames(yintercept) <- c("lake", "variable", "xintercept")
+    yintercept$lake      <- factor(yintercept$lake, levels = levels(df$lake))
   }
 
-  # If y-intercept desired, add in
-  if (!is.null(exceedance)) {
-    yintercept <- data.frame(NULL)
-    for (lake in lakes) {
-      lake_levels <- df %>% filter(.data$lake == !!lake)
-      ranked      <- calculate_probs_of_levels(lake_levels)
-      level       <- calculate_levels_at_probs(ranked, exceedance)$level
-      yintercept  <- rbind(yintercept, cbind(level, lake))
-    }
-    yintercept   <- yintercept %>%
-                    mutate(yintercept = as.numeric(as.character(.data$level)))
-    yintercept$lake <- factor(yintercept$lake, levels = lakes)
-
+  if (!is.null(yintercept)) {
     plot_obj <- plot_obj +
                 geom_hline(aes(yintercept = yintercept),
                            as.data.frame(yintercept),
