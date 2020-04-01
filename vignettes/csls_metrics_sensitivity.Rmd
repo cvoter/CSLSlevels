@@ -112,11 +112,6 @@ Lastly, **two tables** are displayed. The first shows the difference between
 1981-2018 values of metrics vs. 1905-2018 values. The second shows the
 difference between the mean value for a 38-year timeseries vs. 1905-2018 values.
 
-**NOTE:** Unfortunately, I overlooked a place where a meters to ft switch is
-needed. In the second plots when the RMSE has units of length, these units are
-in meters rather than in feet (the other plot and both tables use units of
-feet).
-
 ```{r calc, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # Metrics for all simulations with nyears = 38
 short_fit <- monte_carlo_metrics %>% 
@@ -149,6 +144,16 @@ df_point         <- csls_metrics_obs %>%
 
 # Metrics for all simulations
 monte_carlo_metrics <- calculate_fit(monte_carlo_metrics)
+monte_carlo_metrics <- monte_carlo_metrics %>%
+                       mutate(value = ifelse(.data$metric %in% 
+                                                c("median_level",
+                                                  "exceedance_level",
+                                                  "exceedance_range",
+                                                  "median_rise_rate",
+                                                  "median_fall_rate") &
+                                                .data$fit == "RMSE",
+                                              NISTmeterTOft(.data$value),
+                                              .data$value))
 
 # Metrics & fit for 1981-2018
 csls_metrics     <- calculate_metrics(csls_levels)
@@ -171,11 +176,11 @@ csls_fit         <- csls_metrics %>%
 For reference, here is the monthly record of lake levels at each lake. Note that
 hydrologic metrics are calculated using the imputed levels for Pleasant, Long,
 and Plainfield lake, but are calculated using the observed levels for Devils
-Lake. The range of the y-axes are scaled such that 1 meter is the same on all
+Lake. The range of the y-axes are scaled such that 1 foot is the same on all
 subplots.
 
 ```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
-plot_levels(CSLSlevels::csls_levels, point_size = 1)
+plot_levels(CSLSlevels::csls_levels, point_size = 1, convert_units = "meterTOft")
 ```
 
 # Magnitude
