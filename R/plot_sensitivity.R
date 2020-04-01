@@ -25,6 +25,8 @@
 #'                        color legend. Defaults to "breaks" to indicate use
 #'                        same values as breaks. Can also be "percent" to add a
 #'                        percent symbol to values in variable_breaks.
+#' @param variable_colors vector with hex codes of colors corresponding to
+#'                        variable_breaks and variable_lables.
 #' @param text_size size of text on plots. Defaults to 12.
 #'
 #' @import ggplot2
@@ -41,6 +43,7 @@ plot_sensitivity <- function(df,
                              variable_title = "",
                              variable_breaks = "sort",
                              variable_labels,
+                             variable_colors = NULL,
                              text_size = 12) {
   plot_df           <- df %>%
                        filter(.data$metric == metric_name)
@@ -69,11 +72,12 @@ plot_sensitivity <- function(df,
                    title = metric_title) +
               scale_x_continuous(expand = c(0, 0)) +
               scale_y_continuous(expand = c(0, 0)) +
-              scale_color_brewer(name = variable_title,
-                                 palette = "Paired") +
+              scale_color_manual(name = variable_title,
+                                 values = variable_colors) +
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight",
                                         size = text_size),
-              plot.title = element_text(hjust = 0.5))
+                    plot.title = element_text(hjust = 0.5),
+                    legend.position = "top")
   return(plot_obj)
 }

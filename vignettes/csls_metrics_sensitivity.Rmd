@@ -14,7 +14,10 @@ library(CSLSlevels)
 library(dplyr)
 library(reshape2)
 library(ggplot2)
+library(RColorBrewer)
 library(extrafont)
+library(lubridate)
+library(NISTunits)
 
 lakes                  <- c("Pleasant", "Long", "Plainfield")
 monte_carlo_metrics    <- CSLSlevels::monte_carlo_metrics
@@ -43,16 +46,58 @@ calculate_fit <- function(summary){
   return(fit)
 }
 
+create_table <- function(df, 
+                         metric_name, 
+                         variable_breaks, 
+                         variable_labels,
+                         convert_units = "",
+                         round_precision = NA,
+                         lakes = c("Pleasant", "Long", "Plainfield")) {
+  table_df <- df %>% 
+              filter(.data$metric == metric_name) %>% 
+              mutate(value = round(.data$value, digits = 2))
+  if (convert_units == "meterTOft") {
+    table_df$value <- NISTmeterTOft(table_df$value)
+  }
+  if (!is.na(round_precision)) {
+    table_df$value <- round((1/round_precision)*table_df$value)/(1/round_precision)
+  }
+  if (variable_breaks == "sort") {
+    variable_breaks <- sort(as.numeric(unique(table_df$variable)))
+  }
+  if (variable_labels == "breaks") {
+    variable_labels <- variable_breaks
+  } else if (variable_labels == "percent") {
+    variable_labels <- sprintf("%d%%", variable_breaks)
+  }
+  table_df$variable  <- factor(table_df$variable,
+                               levels = variable_breaks,
+                               labels = variable_labels)
+  table_df$fit <- NULL
+  table_df <- dcast(table_df, lake~variable, value.var = "value")
+  colnames(table_df) <- c("Lake", variable_labels)
+  
+  return(table_df)
+}
+
 ```
 
 # Overview
-The goal of this exercise is to identify a minimum number of years required to
-reasonably estimate the "true" hydrologic metrics. The "true" values are of
-course unknowable, but we approximate them using metrics calculated with the
-complete timeseries of data (1905-2018 for CSLS lakes; 1936-2001 for Devil's
-Lake). These plots illustrate the 1) bias, 2) precision, and 3) accuracy of
-hydrologic metrics calculated with a) random subsets of the timeseries or b) a
-moving window of the timeseries. The error measurements displayed here are:
+The goal of this exercise is to identify whether a 38 year timeseries is
+sufficient to reasonably estimate the "true" hydrologic metrics. The "true"
+values are of course unknowable, but we approximate them using metrics
+calculated with the complete timeseries of data (1905-2018 for CSLS lakes;
+1936-2001 for Devil's Lake). 
+
+For each calculated metric, the **first plot** contains a) box plots of the range of
+values calculated in 100 random samples of 38 continuous years of lake levels,
+b) a triangle representing the value calculated with the full timeseries, and c)
+a square representing the value calculated using data from 1981-2018.
+
+The **second plot** illustrates the 1) bias, 2) precision, and 3) accuracy of
+hydrologic metrics calculated based on 100 random samples of a continuous
+timeseries of lake levels at annual increments. The error measurements displayed
+here are:
 
  1. **PBIAS**, or percent bias. Difference between simulated metric and "true"
  long-term metric relative to the long-term metric (units of percent).
@@ -63,147 +108,489 @@ moving window of the timeseries. The error measurements displayed here are:
  "meters" for median levels, "percent" for CV of levels, "months" for
  median duration).
 
+Lastly, **two tables** are displayed. The first shows the difference between
+1981-2018 values of metrics vs. 1905-2018 values. The second shows the
+difference between the mean value for a 38-year timeseries vs. 1905-2018 values.
+
+**NOTE:** Unfortunately, I overlooked a place where a meters to ft switch is
+needed. In the second plots when the RMSE has units of length, these units are
+in meters rather than in feet (the other plot and both tables use units of
+feet).
+
 ```{r calc, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+# Metrics for all simulations with nyears = 38
+short_fit <- monte_carlo_metrics %>% 
+             filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"),
+                    .data$nyear == 38) %>%
+             group_by(.data$lake, .data$metric, .data$variable) %>%
+             summarise(sim = median(.data$sim),
+                       obs = mean(.data$obs)) %>%
+             mutate(value = .data$sim - .data$obs) %>%
+             ungroup() %>%
+             as.data.frame() %>%
+             select(.data$lake, .data$metric, .data$variable, .data$value)
+
+df_box <- monte_carlo_metrics %>% 
+          filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"),
+                 .data$nyear == 38) %>%
+          select(lake = .data$lake,
+                 metric = .data$metric,
+                 variable = .data$variable,
+                 value = .data$sim,
+                 nsim = .data$nsim)
+
+# Metrics for 1905-2018
+csls_metrics_obs <- calculate_metrics()
+df_point         <- csls_metrics_obs %>% 
+                    filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+
+# Metrics for all simulations
 monte_carlo_metrics <- calculate_fit(monte_carlo_metrics)
+
+
+# Metrics & fit for 1981-2018
+csls_metrics     <- calculate_metrics(csls_levels)
+df_point_short   <- csls_metrics %>% 
+                    filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+colnames(csls_metrics)[which(colnames(csls_metrics) == "value")] <- "sim"
+colnames(csls_metrics_obs)[which(colnames(csls_metrics_obs) == "value")] <- "obs"
+csls_metrics     <- merge(csls_metrics, 
+                          csls_metrics_obs,
+                          by = c("lake", "metric", "variable"),
+                          all.x = TRUE)
+csls_fit         <- csls_metrics %>%
+                    group_by(.data$lake, .data$metric, .data$variable) %>%
+                    mutate(value = .data$sim - .data$obs) %>%
+                    ungroup() %>%
+                    as.data.frame() %>%
+                    select(.data$lake, .data$metric, .data$variable, .data$value)
+```
+
+# Levels
+
+For reference, here is the monthly record of lake levels at each lake. Note that
+hydrologic metrics are calculated using the imputed levels for Pleasant, Long,
+and Plainfield lake, but are calculated using the observed levels for Devils
+Lake. The range of the y-axes are scaled such that 1 meter is the same on all
+subplots.
+
+```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
+plot_levels(CSLSlevels::csls_levels, point_size = 1)
 ```
 
 # Magnitude
 
 ## Median levels
 
-```{r median_level, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+**With a timeseries of 38 years,** the mean accuracy of median levels is within
+0.4 ft for the Central Sands Lakes and within 0.5 ft for Devil's Lake. Bias and
+variance are very low (< 0.15%) at all timeseries lengths.
+
+**With longer timeseries,** bias, variance, and accuracy actually worsen for
+timeseries lengths ~45 years to 75 years at Long Lake, while other lakes see a
+steady, but not dramatic, improvement in error metrics.
+
+**Decision:** Good to use. I believe the accuracy of our lake level estimates is
+around 0.5ft, so I don't think we can expect our metrics to be any more preceise
+than this.
+
+**Implications of using 1981-2018 timeseries:** Median levels from 1981-2018 are
+the highest of any 38 year window.
+
+```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "median_level"
-metric_title    <- "Median Level"
+metric_title    <- "Error in Median Level"
 variable_title  <- "Month"
 variable_breaks <- "sort"
 variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                     "Aug", "Sep", "Oct", "Nov", "Dec")
+variable_colors <- c("#000000", brewer.pal(12, "Paired"))
+value_title     <- "Median Level (ft)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title = "", variable_breaks, variable_labels, value_title,
+           convert_units = "meterTOft", rotate_xticks = TRUE)
+```
+
+<br>
+
+```{r median_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+
+<br>
+
+```{r median_level_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (ft)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 ```
 
 ## CV of levels
 
-```{r cv_level, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+**With a timeseries of 38 years,** the mean accuracy of the CV of lake levels is
+within 0.01% for the Central Sands Lakes and within 0.03% for Devil's Lake.
+
+**With longer timeseries,** there is little change in bias, accuracy, and
+variance. Values appear to plateau between ~30 to 45 years at all lakes.
+
+**Decision:** Good to use.
+
+**Implications of using 1981-2018 timeseries:** The CV of levels from 1981-2018
+nearly identical to the long term CV of levels at Long Lake, but are among the
+lowest observed CVs at Pleasant and Plainfield.
+
+```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "cv_level"
 metric_title    <- "CV Level"
 variable_title  <- "Month"
 variable_breaks <- "sort"
 variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                     "Aug", "Sep", "Oct", "Nov", "Dec")
+variable_colors <- c("#000000", brewer.pal(12, "Paired"))
+value_title     <- "CV of Levels (%)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title = "", variable_breaks, variable_labels, value_title,
+           convert_units = "", ytick_precision = NA, same_range = FALSE, 
+           rotate_xticks = TRUE)
+```
+
+<br>
+
+```{r cv_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+<br>
+
+```{r cv_level_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.01)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (%)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.01)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 ```
 
 # Frequency
 
 ## Exceedance probabilities
 
-```{r exceedance_level, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+**With a timeseries of 38 years,** the mean accuracy of the lake levels
+associated with the 10%, 25%, 50%, 75%, and 90% exceedance probabilities is
+within 0.4 ft for all Central Sands Lakes and within 0.7 ft for Devil's Lake.
+
+**With longer timeseries,** the bias, variance, and accuracy at Pleasant,
+Plainfield, and Devil's Lake gradually but steadily improve. At Long Lake, these
+values worsen for timeseries ~45 years to 75 years.
+
+**Decision:** Good to use. No sharp changes in error measurements with longer
+timeseries, and accuracy is reasonably close to accuracy of estimated lake
+levels.
+
+**Implications of using 1981-2018 timeseries:** Infrequent high levels are
+fairly close to their long term values, but median levels and infrequent low
+levels are high for Pleasant and Plainfield Lake. At Long Lake, only the middle
+exceedance levels (25%, 50%, 75%) are substantially different.
+
+```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "exceedance_level"
 metric_title    <- "Exceedance Level"
 variable_title  <- "Exceed. Prob"
 variable_breaks <- "sort"
 variable_labels <- "percent"
+variable_colors <- c(brewer.pal(6, "Paired")[2:1],
+                     "#000000",
+                     brewer.pal(6, "Paired")[5:6])
+value_title     <- "Lake Level (ft)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title = "", variable_breaks, variable_labels, value_title,
+           convert_units = "meterTOft")
+```
+
+<br>
+
+```{r exceedance_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+<br>
+
+```{r exceedance_level_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (ft)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 ```
 
 ## Exceedance probability ranges
 
-```{r exceedance_range, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "exceedance_range"
 metric_title    <- "Exceedance Range"
 variable_title  <- "Exceed. Prob"
 variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
 variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
                      "Monthly 10%-90%", "Monthly 25%-75%")
+variable_colors <- c(brewer.pal(4, "Paired"))
+value_title     <- "Lake Level Range (ft)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title = "", variable_breaks, variable_labels, value_title,
+           convert_units = "meterTOft", rotate_xticks = TRUE)
+```
+
+<br>
+
+```{r exceedance_range_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+<br>
+
+```{r exceedance_range_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (ft)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 ```
 
 # Duration
 
 ## Median duration
 
-```{r median_dur, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "median_dur"
 metric_title    <- "Median Duration"
 variable_title  <- "Exceed. Prob"
 variable_breaks <- "sort"
 variable_labels <- "percent"
+variable_colors <- c(brewer.pal(6, "Paired")[2:1],
+                     brewer.pal(6, "Paired")[5:6])
+value_title     <- "Months"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title = "", variable_breaks, variable_labels, value_title,
+           convert_units = "", same_range = FALSE)
+```
+
+<br>
+
+```{r median_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+<br>
+
+```{r median_dur_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (months)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (months)")
 ```
 
 ## CV of duration
 
-```{r cv_dur, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "cv_dur"
 metric_title    <- "CV Duration"
 variable_title  <- "Exceed. Prob"
 variable_breaks <- "sort"
 variable_labels <- "percent"
+variable_colors <- c(brewer.pal(6, "Paired")[2:1],
+                     brewer.pal(6, "Paired")[5:6])
+value_title     <- "CV of Duration (%)"
 
+
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title = "", variable_breaks, variable_labels, value_title,
+           convert_units = "", same_range = FALSE)
+```
+
+<br>
+
+```{r cv_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+
+```{r cv_dur_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (%)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 ```
 
 # Rate of change
 
 ## Median rise rate
 
-```{r median_rise_rate, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "median_rise_rate"
 metric_title    <- "Median Rise Rate"
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
+variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+value_title     <- "Rise Rate (ft/time period)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title, variable_breaks, variable_labels, value_title,
+           convert_units = "meterTOft")
+```
+
+<br>
+
+```{r median_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+
+```{r median_rise_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (ft/time period)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)")
 ```
 
 ## CV of rise rate
 
-```{r cv_rise_rate, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "cv_rise_rate"
 metric_title    <- "CV Rise Rate"
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
+variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+value_title     <- "CV of Rise Rate (%)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title, variable_breaks, variable_labels, value_title,
+           convert_units = "", same_range = FALSE)
+```
+
+<br>
+
+```{r cv_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+
+```{r cv_rise_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (%)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 ```
 
 ## Median fall rate
 
-```{r median_fall_rate, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "median_fall_rate"
 metric_title    <- "Median Fall Rate"
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
+variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+value_title     <- "Fall Rate (ft/time period)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title, variable_breaks, variable_labels, value_title,
+           convert_units = "meterTOft")
+```
+
+<br>
+
+```{r median_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+
+```{r median_fall_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.01)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (ft/time period)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.01)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)")
 ```
 
 ## CV of fall rate
 
-```{r cv_fall_rate, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
 metric_name     <- "cv_fall_rate"
 metric_title    <- "CV Fall Rate"
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
+variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+value_title     <- "CV of Fall Rate (%)"
 
+plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
+           variable_title, variable_breaks, variable_labels, value_title,
+           convert_units = "", same_range = FALSE)
+```
+
+<br>
+
+```{r cv_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels)
+                 variable_breaks, variable_labels, variable_colors, text_size)
+```
+
+```{r cv_fall_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(csls_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "1981-2018 Difference (%)")
+
+table_df <- create_table(short_fit, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 ```

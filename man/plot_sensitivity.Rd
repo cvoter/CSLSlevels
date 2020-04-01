@@ -11,6 +11,7 @@ plot_sensitivity(
   variable_title = "",
   variable_breaks = "sort",
   variable_labels,
+  variable_colors = NULL,
   text_size = 12
 )
 }
@@ -42,6 +43,9 @@ ascending order.}
 color legend. Defaults to "breaks" to indicate use
 same values as breaks. Can also be "percent" to add a
 percent symbol to values in variable_breaks.}
+
+\item{variable_colors}{vector with hex codes of colors corresponding to
+variable_breaks and variable_lables.}
 
 \item{text_size}{size of text on plots. Defaults to 12.}
 }

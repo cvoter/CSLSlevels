@@ -13,7 +13,7 @@
 #'   \item{lake}{lake name, "Long", "Plainfield", "Pleasant", or "Devils"}
 #'   \item{date}{month and year of observation, POSIXct}
 #'   \item{level}{lake level (mamsl) on that date}
-#'   \item{sim}{simulation number}
+#'   \item{nsim}{simulation number}
 #'   \item{nyears}{number of years sampled}
 #' }
 "monte_carlo"

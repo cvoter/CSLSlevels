@@ -25,7 +25,8 @@ Imports:
     sf,
     CSLSdata,
     reshape2,
-    scales
+    scales,
+    NISTunits
 Suggests:
     knitr,
     rmarkdown,
@@ -33,7 +34,8 @@ Suggests:
     kableExtra,
     cowplot,
     magick,
-    patchwork
+    patchwork,
+    RColorBrewer
 VignetteBuilder: knitr
 RoxygenNote: 7.1.0
 Roxygen: list(markdown = TRUE)
