@@ -43,6 +43,3 @@ obs_summary <- calculate_metrics(csls_levels)
 monte_carlo            <- CSLSlevels::monte_carlo
 monte_carlo_metrics    <- calculate_summary(monte_carlo, obs_summary)
 use_data(monte_carlo_metrics, overwrite = TRUE, compress = 'xz')
-# moving_windows         <- CSLSlevels::moving_windows
-# moving_windows_metrics <- calculate_summary(moving_windows, obs_summary)
-# use_data(monte_carlo_metrics, moving_windows_metrics, overwrite = TRUE, compress = 'xz')

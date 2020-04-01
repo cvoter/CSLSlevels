@@ -18,7 +18,8 @@ plot_levels(
   line_size = 1,
   point_size = 3,
   npretty_breaks = NULL,
-  force_pfl = TRUE
+  force_pfl = TRUE,
+  convert_units = ""
 )
 }
 \arguments{
@@ -60,6 +61,9 @@ and Pleasant to integers (or play around, may be different with different
 periods of record)}
 
 \item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
+
+\item{convert_units}{logical defulats to "". If "metersTOft", converts values
+from meters to feet.}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.

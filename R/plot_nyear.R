@@ -137,15 +137,13 @@ plot_nyear <- function(df_box,
     range <- specify_range(df_box, "lake", "value", ytick_precision, pfl_is_long)
     plot_obj <- plot_obj +
                 facet_wrap(~lake,
-                           scales = "free_y",
-                           ncol = length(unique(df_box$lake))) +
+                           scales = "free_y") +
                 geom_blank(data = range,
                            aes(x = unique(df_box$variable)[1],
                                y = .data$value))
   } else {
     plot_obj <- plot_obj +
-                facet_wrap(~lake,
-                           ncol = length(unique(df_box$lake)))
+                facet_wrap(~lake)
   }
 
   if (!is.null(df_point_short)) {

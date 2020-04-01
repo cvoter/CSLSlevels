@@ -31,7 +31,8 @@
 #'   and Pleasant to integers (or play around, may be different with different
 #'   periods of record)
 #' @param force_pfl defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.
-#'
+#' @param convert_units logical defulats to "". If "metersTOft", converts values
+#'                      from meters to feet.
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
 #' @importFrom raster minValue
@@ -57,7 +58,16 @@ plot_levels <- function(df,
                         line_size = 1,
                         point_size = 3,
                         npretty_breaks = NULL,
-                        force_pfl = TRUE) {
+                        force_pfl = TRUE,
+                        convert_units = "") {
+
+  if (convert_units == "meterTOft") {
+    df$level_pred <- NISTmeterTOft(df$level_pred)
+    df$level_obs <- NISTmeterTOft(df$level_obs)
+    ytitle <- "Lake Elevation (ft)"
+  } else {
+    ytitle <- "Lake Elevation (m)"
+  }
 
   # Basic plot w/lines for estimate, points for observations
   plot_obj <- ggplot(data = df) +
@@ -72,28 +82,16 @@ plot_levels <- function(df,
 
   # If more than one lake, use facets
   if (length(unique(df$lake)) > 1) {
-    range     <- df %>%
-                 group_by(.data$lake) %>%
-                 summarize(lower = min(.data$level_pred),
-                           upper = max(.data$level_pred)) %>%
-                 mutate(midpoint = .data$lower + (.data$upper -.data$lower)/2) %>%
-                 ungroup() %>%
-                 mutate(range = .data$upper - .data$lower)
-    max_range <- ceiling(10*max(range$range))/10
-    new_range <- range[,1:3]
-    new_range$lower <- range$midpoint - max_range/2
-    new_range$upper <- range$midpoint + max_range/2
-    range <- melt(new_range, id.vars = "lake")
+    range <- specify_range(df,
+                           group_col = "lake",
+                           value_col = "level_pred",
+                           tick_precision = 0.5,
+                           pfl_is_long = force_pfl)
     range$date <- median(df$date)
-
-    if (force_pfl) {
-      range$value[which(range$lake == "Plainfield" & range$variable == "upper")] <- range$value[which(range$lake == "Long" & range$variable == "upper")]
-      range$value[which(range$lake == "Plainfield" & range$variable == "lower")] <- range$value[which(range$lake == "Long" & range$variable == "lower")]
-    }
 
     plot_obj <- plot_obj +
                 geom_blank(data = range,
-                           aes(x = .data$date, y = .data$value)) +
+                           aes(x = .data$date, y = .data$level_pred)) +
                 facet_wrap(~lake, scales = "free_y")
   }
 
@@ -114,17 +112,17 @@ plot_levels <- function(df,
                            size = line_size)
   }
 
-  # If depth axis desired, add in
-  if (length(unique(df$lake)) == 1 & depth_axis) {
-    lake_raster <- CSLSlevels::lake_raster[[unique(df$lake)]]
-    lake_bottom <- minValue(lake_raster)
-    lake_top    <- max(df$level_pred)
-    lake_range  <- c(lake_bottom, lake_top)
-    plot_obj    <- plot_obj +
-                   scale_y_continuous(sec.axis = sec_axis(~.-lake_range[1],
-                                                       name = "Max Depth (m)"),
-                                      limits = lake_range)
-  }
+  # # If depth axis desired, add in
+  # if (length(unique(df$lake)) == 1 & depth_axis) {
+  #   lake_raster <- CSLSlevels::lake_raster[[unique(df$lake)]]
+  #   lake_bottom <- minValue(lake_raster)
+  #   lake_top    <- max(df$level_pred)
+  #   lake_range  <- c(lake_bottom, lake_top)
+  #   plot_obj    <- plot_obj +
+  #                  scale_y_continuous(sec.axis = sec_axis(~.-lake_range[1],
+  #                                                      name = "Max Depth (m)"),
+  #                                     limits = lake_range)
+  # }
 
   if (!is.null(npretty_breaks)) {
     plot_obj <- plot_obj + scale_y_continuous(breaks = pretty_breaks(npretty_breaks))
@@ -133,7 +131,7 @@ plot_levels <- function(df,
   # Add in aesthetics
   plot_obj <- plot_obj +
               labs(x = "",
-                   y = "Lake Elevation (m)",
+                   y = ytitle,
                    color = "",
                    title = title) +
               scale_color_manual(values = color_vals,

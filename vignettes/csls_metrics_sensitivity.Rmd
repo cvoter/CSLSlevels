@@ -21,12 +21,14 @@ library(NISTunits)
 
 lakes                  <- c("Pleasant", "Long", "Plainfield")
 monte_carlo_metrics    <- CSLSlevels::monte_carlo_metrics
-moving_windows_metrics <- CSLSlevels::moving_windows_metrics
 csls_levels            <- CSLSlevels::csls_levels
 csls_levels            <- csls_levels %>%
-                          filter(.data$lake %in% lakes,
-                                 year(.data$date) >= 1981,
-                                 year(.data$date) <= 2018)
+                          filter((.data$lake %in% lakes &
+                                 year(.data$date) >= 1981 &
+                                 year(.data$date) <= 2018) |
+                                   (.data$lake == "Devils" &
+                                 year(.data$date) >= 1981 &
+                                 year(.data$date) <= 2001))
 
 text_size <- 12
 
@@ -112,16 +114,10 @@ Lastly, **two tables** are displayed. The first shows the difference between
 1981-2018 values of metrics vs. 1905-2018 values. The second shows the
 difference between the mean value for a 38-year timeseries vs. 1905-2018 values.
 
-**NOTE:** Unfortunately, I overlooked a place where a meters to ft switch is
-needed. In the second plots when the RMSE has units of length, these units are
-in meters rather than in feet (the other plot and both tables use units of
-feet).
-
 ```{r calc, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # Metrics for all simulations with nyears = 38
 short_fit <- monte_carlo_metrics %>% 
-             filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"),
-                    .data$nyear == 38) %>%
+             filter(.data$nyear == 38) %>%
              group_by(.data$lake, .data$metric, .data$variable) %>%
              summarise(sim = median(.data$sim),
                        obs = mean(.data$obs)) %>%
@@ -131,8 +127,7 @@ short_fit <- monte_carlo_metrics %>%
              select(.data$lake, .data$metric, .data$variable, .data$value)
 
 df_box <- monte_carlo_metrics %>% 
-          filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"),
-                 .data$nyear == 38) %>%
+          filter(.data$nyear == 38) %>%
           select(lake = .data$lake,
                  metric = .data$metric,
                  variable = .data$variable,
@@ -140,20 +135,32 @@ df_box <- monte_carlo_metrics %>%
                  nsim = .data$nsim)
 
 # Metrics for 1905-2018
-csls_metrics_obs <- calculate_metrics()
-df_point         <- csls_metrics_obs %>% 
-                    filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+csls_metrics_obs <- monte_carlo_metrics %>%
+                    select(.data$lake, .data$metric, .data$variable, .data$obs) %>%
+                    unique()
+df_point         <- csls_metrics_obs %>%
+                    select(lake = .data$lake,
+                           metric = .data$metric,
+                           variable = .data$variable,
+                           value = .data$obs)
 
 # Metrics for all simulations
 monte_carlo_metrics <- calculate_fit(monte_carlo_metrics)
-
+monte_carlo_metrics <- monte_carlo_metrics %>%
+                       mutate(value = ifelse(.data$metric %in% 
+                                                c("median_level",
+                                                  "exceedance_level",
+                                                  "exceedance_range",
+                                                  "median_rise_rate",
+                                                  "median_fall_rate") &
+                                                .data$fit == "RMSE",
+                                              NISTmeterTOft(.data$value),
+                                              .data$value))
 
 # Metrics & fit for 1981-2018
 csls_metrics     <- calculate_metrics(csls_levels)
-df_point_short   <- csls_metrics %>% 
-                    filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+df_point_short   <- csls_metrics
 colnames(csls_metrics)[which(colnames(csls_metrics) == "value")] <- "sim"
-colnames(csls_metrics_obs)[which(colnames(csls_metrics_obs) == "value")] <- "obs"
 csls_metrics     <- merge(csls_metrics, 
                           csls_metrics_obs,
                           by = c("lake", "metric", "variable"),
@@ -171,11 +178,11 @@ csls_fit         <- csls_metrics %>%
 For reference, here is the monthly record of lake levels at each lake. Note that
 hydrologic metrics are calculated using the imputed levels for Pleasant, Long,
 and Plainfield lake, but are calculated using the observed levels for Devils
-Lake. The range of the y-axes are scaled such that 1 meter is the same on all
+Lake. The range of the y-axes are scaled such that 1 foot is the same on all
 subplots.
 
 ```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
-plot_levels(CSLSlevels::csls_levels, point_size = 1)
+plot_levels(CSLSlevels::csls_levels, point_size = 1, convert_units = "meterTOft")
 ```
 
 # Magnitude
@@ -183,8 +190,8 @@ plot_levels(CSLSlevels::csls_levels, point_size = 1)
 ## Median levels
 
 **With a timeseries of 38 years,** the mean accuracy of median levels is within
-0.4 ft for the Central Sands Lakes and within 0.5 ft for Devil's Lake. Bias and
-variance are very low (< 0.15%) at all timeseries lengths.
+0.4 ft for the Central Sands Lakes and within 0.5 ft for Devil's Lake. Mean bias
+and mean varirance are less than 0.05% at all lakes.
 
 **With longer timeseries,** bias, variance, and accuracy actually worsen for
 timeseries lengths ~45 years to 75 years at Long Lake, while other lakes see a
@@ -197,7 +204,7 @@ than this.
 **Implications of using 1981-2018 timeseries:** Median levels from 1981-2018 are
 the highest of any 38 year window.
 
-```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_level"
 metric_title    <- "Error in Median Level"
 variable_title  <- "Month"
@@ -236,10 +243,14 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 ## CV of levels
 
 **With a timeseries of 38 years,** the mean accuracy of the CV of lake levels is
-within 0.01% for the Central Sands Lakes and within 0.03% for Devil's Lake.
+within 0.01% for the Central Sands Lakes and within 0.04% for Devil's Lake. Mean
+variance is around 25% for Pleasant Lake, but below 15% for all other lakes.
+Mean bias is below 25% for all lakes.
 
 **With longer timeseries,** there is little change in bias, accuracy, and
-variance. Values appear to plateau between ~30 to 45 years at all lakes.
+variance. Values appear to plateau at around a 38 year timeseries, though at
+Pleasant Lake, mean variance does not plateau until ~50 years and mean accuracy
+and mean bias steadily decline as timeseries length increases.
 
 **Decision:** Good to use.
 
@@ -247,7 +258,7 @@ variance. Values appear to plateau between ~30 to 45 years at all lakes.
 nearly identical to the long term CV of levels at Long Lake, but are among the
 lowest observed CVs at Pleasant and Plainfield.
 
-```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_level"
 metric_title    <- "CV Level"
 variable_title  <- "Month"
@@ -304,7 +315,7 @@ fairly close to their long term values, but median levels and infrequent low
 levels are high for Pleasant and Plainfield Lake. At Long Lake, only the middle
 exceedance levels (25%, 50%, 75%) are substantially different.
 
-```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_level"
 metric_title    <- "Exceedance Level"
 variable_title  <- "Exceed. Prob"
@@ -342,7 +353,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## Exceedance probability ranges
 
-```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_range"
 metric_title    <- "Exceedance Range"
 variable_title  <- "Exceed. Prob"
@@ -381,7 +400,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## Median duration
 
-```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_dur"
 metric_title    <- "Median Duration"
 variable_title  <- "Exceed. Prob"
@@ -418,7 +445,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (months)")
 
 ## CV of duration
 
-```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_dur"
 metric_title    <- "CV Duration"
 variable_title  <- "Exceed. Prob"
@@ -457,7 +492,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 
 ## Median rise rate
 
-```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_rise_rate"
 metric_title    <- "Median Rise Rate"
 variable_title  <- "Months"
@@ -492,7 +535,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)"
 
 ## CV of rise rate
 
-```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_rise_rate"
 metric_title    <- "CV Rise Rate"
 variable_title  <- "Months"
@@ -527,7 +578,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 
 ## Median fall rate
 
-```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_fall_rate"
 metric_title    <- "Median Fall Rate"
 variable_title  <- "Months"
@@ -562,7 +621,15 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)"
 
 ## CV of fall rate
 
-```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+**With a timeseries of 38 years,** the mean accuracy
+
+**With longer timeseries,** 
+
+**Decision:** 
+
+**Implications of using 1981-2018 timeseries:** 
+
+```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_fall_rate"
 metric_title    <- "CV Fall Rate"
 variable_title  <- "Months"
