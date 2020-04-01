@@ -120,8 +120,7 @@ feet).
 ```{r calc, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 # Metrics for all simulations with nyears = 38
 short_fit <- monte_carlo_metrics %>% 
-             filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"),
-                    .data$nyear == 38) %>%
+             filter(.data$nyear == 38) %>%
              group_by(.data$lake, .data$metric, .data$variable) %>%
              summarise(sim = median(.data$sim),
                        obs = mean(.data$obs)) %>%
@@ -131,8 +130,7 @@ short_fit <- monte_carlo_metrics %>%
              select(.data$lake, .data$metric, .data$variable, .data$value)
 
 df_box <- monte_carlo_metrics %>% 
-          filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"),
-                 .data$nyear == 38) %>%
+          filter(.data$nyear == 38) %>%
           select(lake = .data$lake,
                  metric = .data$metric,
                  variable = .data$variable,
@@ -140,20 +138,22 @@ df_box <- monte_carlo_metrics %>%
                  nsim = .data$nsim)
 
 # Metrics for 1905-2018
-csls_metrics_obs <- calculate_metrics()
-df_point         <- csls_metrics_obs %>% 
-                    filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+csls_metrics_obs <- monte_carlo_metrics %>%
+                    select(.data$lake, .data$metric, .data$variable, .data$obs) %>%
+                    unique()
+df_point         <- csls_metrics_obs %>%
+                    select(lake = .data$lake,
+                           metric = .data$metric,
+                           variable = .data$variable,
+                           value = .data$obs)
 
 # Metrics for all simulations
 monte_carlo_metrics <- calculate_fit(monte_carlo_metrics)
 
-
 # Metrics & fit for 1981-2018
 csls_metrics     <- calculate_metrics(csls_levels)
-df_point_short   <- csls_metrics %>% 
-                    filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+df_point_short   <- csls_metrics
 colnames(csls_metrics)[which(colnames(csls_metrics) == "value")] <- "sim"
-colnames(csls_metrics_obs)[which(colnames(csls_metrics_obs) == "value")] <- "obs"
 csls_metrics     <- merge(csls_metrics, 
                           csls_metrics_obs,
                           by = c("lake", "metric", "variable"),
@@ -197,7 +197,7 @@ than this.
 **Implications of using 1981-2018 timeseries:** Median levels from 1981-2018 are
 the highest of any 38 year window.
 
-```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_level"
 metric_title    <- "Error in Median Level"
 variable_title  <- "Month"
@@ -247,7 +247,7 @@ variance. Values appear to plateau between ~30 to 45 years at all lakes.
 nearly identical to the long term CV of levels at Long Lake, but are among the
 lowest observed CVs at Pleasant and Plainfield.
 
-```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_level"
 metric_title    <- "CV Level"
 variable_title  <- "Month"
@@ -304,7 +304,7 @@ fairly close to their long term values, but median levels and infrequent low
 levels are high for Pleasant and Plainfield Lake. At Long Lake, only the middle
 exceedance levels (25%, 50%, 75%) are substantially different.
 
-```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_level"
 metric_title    <- "Exceedance Level"
 variable_title  <- "Exceed. Prob"
@@ -342,7 +342,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## Exceedance probability ranges
 
-```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_range"
 metric_title    <- "Exceedance Range"
 variable_title  <- "Exceed. Prob"
@@ -381,7 +381,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## Median duration
 
-```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_dur"
 metric_title    <- "Median Duration"
 variable_title  <- "Exceed. Prob"
@@ -418,7 +418,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (months)")
 
 ## CV of duration
 
-```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_dur"
 metric_title    <- "CV Duration"
 variable_title  <- "Exceed. Prob"
@@ -457,7 +457,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 
 ## Median rise rate
 
-```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_rise_rate"
 metric_title    <- "Median Rise Rate"
 variable_title  <- "Months"
@@ -492,7 +492,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)"
 
 ## CV of rise rate
 
-```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_rise_rate"
 metric_title    <- "CV Rise Rate"
 variable_title  <- "Months"
@@ -527,7 +527,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 
 ## Median fall rate
 
-```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_fall_rate"
 metric_title    <- "Median Fall Rate"
 variable_title  <- "Months"
@@ -562,7 +562,7 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)"
 
 ## CV of fall rate
 
-```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_fall_rate"
 metric_title    <- "CV Fall Rate"
 variable_title  <- "Months"

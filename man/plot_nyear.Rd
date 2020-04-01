@@ -20,6 +20,7 @@ plot_nyear(
   text_size = 12,
   same_range = TRUE,
   ytick_precision = 0.5,
+  rotate_xticks = FALSE,
   pfl_is_long = FALSE
 )
 }
@@ -80,6 +81,9 @@ have the same range in y. If FALSE}
 
 \item{ytick_precision}{indicates precision of rounding, defaults to 0.5. Only
 used if same_range is TRUE.}
+
+\item{rotate_xticks}{defaults to FALSE. If TRUE, rotates x tick lables
+90 degrees}
 
 \item{pfl_is_long}{logical defaults to FALSE to indicate Plainfield and Long
 can retain independent ranges. Only used if same_range is
