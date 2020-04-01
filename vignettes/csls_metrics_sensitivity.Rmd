@@ -21,7 +21,6 @@ library(NISTunits)
 
 lakes                  <- c("Pleasant", "Long", "Plainfield")
 monte_carlo_metrics    <- CSLSlevels::monte_carlo_metrics
-moving_windows_metrics <- CSLSlevels::moving_windows_metrics
 csls_levels            <- CSLSlevels::csls_levels
 csls_levels            <- csls_levels %>%
                           filter(.data$lake %in% lakes,
