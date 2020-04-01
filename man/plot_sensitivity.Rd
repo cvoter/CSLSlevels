@@ -12,7 +12,8 @@ plot_sensitivity(
   variable_breaks = "sort",
   variable_labels,
   variable_colors = NULL,
-  text_size = 12
+  text_size = 12,
+  vline = 38
 )
 }
 \arguments{
@@ -48,6 +49,10 @@ percent symbol to values in variable_breaks.}
 variable_breaks and variable_lables.}
 
 \item{text_size}{size of text on plots. Defaults to 12.}
+
+\item{vline}{optional value at which to draw a dashed vertical line. Defaults
+to 38 (i.e., nyears from 1981-2018), but can be set to NULL for
+no line.}
 }
 \description{
 Creates a facet plot with lakes faceted horizontally and error estimates
