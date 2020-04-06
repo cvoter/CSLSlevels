@@ -13,7 +13,8 @@ plot_sensitivity(
   variable_labels,
   variable_colors = NULL,
   text_size = 12,
-  vline = 38
+  vline = 38,
+  hlines = NULL
 )
 }
 \arguments{
@@ -53,6 +54,9 @@ variable_breaks and variable_lables.}
 \item{vline}{optional value at which to draw a dashed vertical line. Defaults
 to 38 (i.e., nyears from 1981-2018), but can be set to NULL for
 no line.}
+
+\item{hlines}{optional data frame with values to draw horizontal lines for
+PBIS, CV, and RMSE. Defaults to NULL for no line.}
 }
 \description{
 Creates a facet plot with lakes faceted horizontally and error estimates
