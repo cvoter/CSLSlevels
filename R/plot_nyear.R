@@ -157,12 +157,12 @@ plot_nyear <- function(df_box,
                 geom_point(data = df_point_short,
                            aes(x = .data$variable,
                                y = .data$value,
-                               shape = "Short Timeseries"),
+                               shape = "1981 Start Year"),
                            color = point_color,
                            size = point_size) +
                 scale_shape_manual(name = "",
                                    breaks = c("Full Timeseries",
-                                              "Short Timeseries"),
+                                              "1981 Start Year"),
                                    values = c(17, 15)) +
                 theme(legend.position = "top")
   }

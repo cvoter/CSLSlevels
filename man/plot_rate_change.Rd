@@ -6,13 +6,15 @@
 \usage{
 plot_rate_change(
   df,
-  lakes = c("Pleasant", "Long", "Plainfield"),
-  lag_months = 1,
+  lag_months = c(1, 3, 12),
+  convert_to_ft = TRUE,
   show_zero = TRUE,
+  show_median = TRUE,
+  show_labels = TRUE,
   max_rate = NULL,
   title = "",
   text_size = 12,
-  vline_color = "black",
+  vline_color = "#c00000",
   hist_color = "grey80",
   density_color = "#c00000",
   line_size = 1
@@ -22,12 +24,17 @@ plot_rate_change(
 \item{df}{a data frame with columns for "lake", "date", "level_obs", and
 "level_pred" that matches desired time series to analyze}
 
-\item{lakes}{name of lakes to analyze}
-
 \item{lag_months}{number of months to analyze rise/fall over, defaults to 1}
 
-\item{show_zero}{logical defaults to FALSE. If true, plots vertical line at
+\item{convert_to_ft}{defaults to true to converet rates from m/time period to
+ft/time period}
+
+\item{show_zero}{logical defaults to TRUE to plot vertical line at
 median number of months.}
+
+\item{show_median}{logical defaults to TRUE to display median rise/fall rates}
+
+\item{show_labels}{logical defaults to TRUE to label median rise/fall rates (if displayed)}
 
 \item{max_rate}{default to NULL, otherwise used to set max x limits}
 

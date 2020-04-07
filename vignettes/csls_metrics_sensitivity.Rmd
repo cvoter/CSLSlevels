@@ -20,6 +20,7 @@ library(lubridate)
 library(NISTunits)
 
 text_size              <- 12
+convert_to_depth       <- TRUE
 lakes                  <- c("Pleasant", "Long", "Plainfield")
 csls_levels            <- CSLSlevels::csls_levels
 csls_levels            <- csls_levels %>%
@@ -34,23 +35,25 @@ csls_levels            <- csls_levels %>%
 # Devil's Lake guesstimated based on "lake depth" in Wikipedia, the most reliable
 # of sources.
 monte_carlo_metrics    <- CSLSlevels::monte_carlo_metrics
-lake_bottom <- data.frame(lake = c("Pleasant", "Long", "Plainfield", "Devils"),
-                          bottom = c(291.1426, 332.8622, 332.0755,
-                                     NISTftTOmeter(964-47)))
-monte_carlo_metrics <- merge(monte_carlo_metrics, 
-                             lake_bottom, 
-                             by = "lake", 
-                             all.x = TRUE)
-monte_carlo_metrics <- monte_carlo_metrics %>%
-                       mutate(sim = ifelse(.data$metric %in% c("median_level",
-                                                               "exceedance_level"),
-                                           .data$sim - .data$bottom,
-                                           .data$sim),
-                              obs = ifelse(.data$metric %in% c("median_level",
-                                                               "exceedance_level"),
-                                           .data$obs - .data$bottom,
-                                           .data$obs))
-monte_carlo_metrics$bottom <- NULL
+if (convert_to_depth){
+  lake_bottom <- data.frame(lake = c("Pleasant", "Long", "Plainfield", "Devils"),
+                            bottom = c(291.1426, 332.8622, 332.0755,
+                                       NISTftTOmeter(964-47)))
+  monte_carlo_metrics <- merge(monte_carlo_metrics, 
+                               lake_bottom, 
+                               by = "lake", 
+                               all.x = TRUE)
+  monte_carlo_metrics <- monte_carlo_metrics %>%
+                         mutate(sim = ifelse(.data$metric %in% c("median_level",
+                                                                 "exceedance_level"),
+                                             .data$sim - .data$bottom,
+                                             .data$sim),
+                                obs = ifelse(.data$metric %in% c("median_level",
+                                                                 "exceedance_level"),
+                                             .data$obs - .data$bottom,
+                                             .data$obs))
+  monte_carlo_metrics$bottom <- NULL
+}
 
 calculate_fit <- function(summary){
   fit <- summary %>%
@@ -183,6 +186,7 @@ monte_carlo_metrics <- monte_carlo_metrics %>%
 
 # Metrics & fit for 1981-2018
 csls_metrics <- calculate_metrics(csls_levels)
+if (convert_to_depth) {
 csls_metrics <- merge(csls_metrics, 
                              lake_bottom, 
                              by = "lake", 
@@ -193,6 +197,7 @@ csls_metrics <- csls_metrics %>%
                                       .data$value - .data$bottom,
                                       .data$value))
 csls_metrics$bottom <- NULL
+}
 df_point_short   <- csls_metrics
 colnames(csls_metrics)[which(colnames(csls_metrics) == "value")] <- "sim"
 csls_metrics     <- merge(csls_metrics, 
@@ -512,12 +517,12 @@ plot_nyear(df_box, df_point, df_point_short, metric_name, metric_title = "",
 
 ```{r median_dur_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(csls_fit, metric_name, variable_breaks, 
-                         variable_labels, convert_units = "meterTOft",
+                         variable_labels, convert_units = "",
                          round_precision = 0.1)
 kableExtra::kable(table_df, caption = "1981-2018 Difference (months)")
 
 table_df <- create_table(short_fit, metric_name, variable_breaks, 
-                         variable_labels, convert_units = "meterTOft",
+                         variable_labels, convert_units = "",
                          round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Mean 38 year Difference (months)")
 ```
@@ -736,7 +741,8 @@ hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
                               value = c(30, 30, 5))
 
 plot_sensitivity(monte_carlo_metrics, metric_name, metric_title, variable_title, 
-                 variable_breaks, variable_labels, variable_colors, text_size)
+                 variable_breaks, variable_labels, variable_colors, text_size,
+                 hlines = hlines)
 ```
 
 <br>

@@ -26,7 +26,8 @@ Imports:
     CSLSdata,
     reshape2,
     scales,
-    NISTunits
+    NISTunits,
+    ggrepel
 Suggests:
     knitr,
     rmarkdown,

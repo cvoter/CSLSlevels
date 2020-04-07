@@ -33,34 +33,29 @@ p2 <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3)
 p2a <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 90)
 p2b <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 10)
 p2c <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 50)
-p3 <- plot_magnitude(csls_levels, text_size = text_size)
-p3a <- plot_magnitude(csls_levels, text_size = text_size, probs = 90)
-p3b <- plot_magnitude(csls_levels, text_size = text_size, probs = 10)
-p3c <- plot_magnitude(csls_levels, text_size = text_size, probs = 50)
+p3 <- plot_frequency(csls_levels, text_size = text_size)
+p3a <- plot_frequency(csls_levels, text_size = text_size, probs = 90)
+p3b <- plot_frequency(csls_levels, text_size = text_size, probs = 10)
+p3c <- plot_frequency(csls_levels, text_size = text_size, probs = 50)
 p4a <- plot_duration(csls_levels_all, 
-                     lakes = lakes, 
                      probs = 90, 
                      show_median = FALSE,
                      text_size = text_size)
 p4b <- plot_duration(csls_levels_all, 
-                     lakes = lakes, 
                      probs = 10, 
                      show_median = FALSE,
                      text_size = text_size)
 p4am <- plot_duration(csls_levels_all, 
-                     lakes = lakes, 
                      probs = 90, 
                      show_median = TRUE,
                      text_size = text_size)
 p4bm <- plot_duration(csls_levels_all, 
-                     lakes = lakes, 
                      probs = 10, 
                      show_median = TRUE,
                      text_size = text_size)
-p5a <- plot_rate_change(csls_levels, lakes, lag_months = 1, text_size = text_size)
-p5b <- plot_rate_change(csls_levels, lakes, lag_months = 3, text_size = text_size)
+p5a <- plot_rate_change(csls_levels, lag_months = 1, text_size = text_size)
+p5b <- plot_rate_change(csls_levels, lag_months = 3, text_size = text_size)
 p5c <- plot_rate_change(csls_levels, 
-                        lakes, 
                         lag_months = 12, 
                         text_size = text_size)
 p6 <- plot_timing(csls_levels, text_size = text_size, npretty_breaks = 3)

@@ -6,43 +6,22 @@
 \usage{
 plot_magnitude(
   df,
-  xintercept = NULL,
-  probs = NULL,
+  convert_to_ft = TRUE,
   title = "",
   text_size = 12,
-  vline_color = "#c00000",
-  hist_color = "grey80",
-  density_color = "#c00000",
-  line_size = 1,
-  force_pfl = TRUE
+  pfl_is_long = TRUE
 )
 }
 \arguments{
-\item{df}{a data frame with columns for "lake", "date", "level_obs", and
-"level_pred".}
+\item{df}{a data frame with columns for "lake", "date", and "level_pred".}
 
-\item{xintercept}{either a single value (if only one lake) or a data frame
-with two columns: "xintercept" with the values, and "lake"
-with the name of each lake in df. Default to NULL to not
-add a line.}
-
-\item{probs}{exceedance probabilities (e.g., 10 for 10\%) to identify with
-a horizontal line}
+\item{convert_to_ft}{defaults to TRUE to convert lake levels from meters to ft}
 
 \item{title}{string to use for title of plot, defaults to "".}
 
 \item{text_size}{size of text, defaults to 12}
 
-\item{vline_color}{color of vertical line, defaults to a red ("#c00000")}
-
-\item{hist_color}{color of histogram bins, defaults to "grey80"}
-
-\item{density_color}{color of density curve with alpha = 0.2, defaults to a
-red ("#c00000")}
-
-\item{line_size}{line size, default to 1}
-
-\item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
+\item{pfl_is_long}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
 }
 \value{
 plot_obj, a plot with the distribution(s) of estimated lake elevation
