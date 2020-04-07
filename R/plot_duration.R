@@ -8,10 +8,10 @@
 #'
 #' @param df a data frame with columns for "lake", "date", "level_obs", and
 #'           "level_pred" that matches desired time series to analyze
-#' @param lakes name of lakes to analyze
 #' @param probs exceedance probabilities to analyze, defaults to 90
 #' @param show_median logical defaults to FALSE. If true, plots vertical line at
 #'                    median number of months.
+#' @param show_labels logical defaults to TRUE to label median duration (if displayed)
 #' @param max_months default to NULL, otherwise used to set max
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
@@ -30,9 +30,9 @@
 #'
 #' @export
 plot_duration <- function(df,
-                          lakes,
                           probs = 90,
-                          show_median = FALSE,
+                          show_median = TRUE,
+                          show_labels = TRUE,
                           max_months = NULL,
                           title = "",
                           text_size = 12,
@@ -43,6 +43,9 @@ plot_duration <- function(df,
 
   colnames(df)[which(colnames(df) == "level_pred")] <- "level"
   durations <- calculate_durations(df, probs)
+  durations$variable <- factor(durations$variable,
+                               levels = levels(durations$variable),
+                               labels = sprintf("%s%%", levels(durations$variable)))
 
   # Basic histogram w/lines for estimate, points for observations
   plot_obj <- ggplot(data = durations,
@@ -57,21 +60,38 @@ plot_duration <- function(df,
                            size = line_size)
 
   # If more than one lake, use facets
-  if (length(lakes) > 1) {
+  if (length(unique(df$lake)) > 1 & length(probs) == 1) {
     plot_obj <- plot_obj +
                 facet_wrap(~lake)
+  } else if (length(unique(df$lake)) > 1) {
+    plot_obj <- plot_obj +
+                facet_grid(variable~lake,
+                           switch = "y")
   }
 
   # If x-intercept desired, add in
   if (show_median) {
-    median   <- median(durations$value, na.rm = TRUE)
+    median   <- durations %>%
+                group_by(.data$lake, .data$variable) %>%
+                summarise(median = median(.data$value, na.rm = TRUE)) %>%
+                ungroup() %>%
+                as.data.frame()
     plot_obj <- plot_obj +
                 geom_vline(aes(xintercept = median),
-                           as.data.frame(median),
+                           median,
                            color = vline_color,
                            linetype = "dashed",
                            size = line_size)
-
+    if (show_labels) {
+      plot_obj <- plot_obj +
+        geom_text(data = median,
+                  aes(x = .data$median,
+                      y = 0.2,
+                      label = sprintf("%s months", .data$median)),
+                  hjust = 0,
+                  nudge_x = 1,
+                  family = "Segoe UI Semibold")
+    }
   }
 
   if (is.null(max_months)) {

@@ -6,9 +6,9 @@
 \usage{
 plot_duration(
   df,
-  lakes,
   probs = 90,
-  show_median = FALSE,
+  show_median = TRUE,
+  show_labels = TRUE,
   max_months = NULL,
   title = "",
   text_size = 12,
@@ -22,12 +22,12 @@ plot_duration(
 \item{df}{a data frame with columns for "lake", "date", "level_obs", and
 "level_pred" that matches desired time series to analyze}
 
-\item{lakes}{name of lakes to analyze}
-
 \item{probs}{exceedance probabilities to analyze, defaults to 90}
 
 \item{show_median}{logical defaults to FALSE. If true, plots vertical line at
 median number of months.}
+
+\item{show_labels}{logical defaults to TRUE to label median duration (if displayed)}
 
 \item{max_months}{default to NULL, otherwise used to set max}
 

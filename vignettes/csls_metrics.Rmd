@@ -1,0 +1,310 @@
+---
+title: "CSLS Lake Metrics"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Lake Metrics}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+library(CSLSlevels)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(RColorBrewer)
+library(extrafont)
+library(lubridate)
+library(NISTunits)
+library(stringr)
+library(reshape2)
+
+text_size       <- 12
+lakes           <- c("Pleasant", "Long", "Plainfield")
+csls_levels     <- CSLSlevels::csls_levels
+csls_levels_all <- csls_levels %>%
+                   filter(.data$lake %in% lakes)
+csls_levels     <- csls_levels %>%
+                   filter(.data$lake %in% lakes,
+                          year(.data$date) >= 1981,
+                          year(.data$date) <= 2018)
+csls_metrics    <- calculate_metrics(csls_levels)
+csls_metrics_all <- calculate_metrics(csls_levels_all)
+```
+
+# Overview
+
+
+<br>
+
+```{r calc, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+create_table <- function(df, 
+                         metric_name, 
+                         variable_breaks, 
+                         variable_labels,
+                         convert_units = "",
+                         round_precision = NA) {
+  table_df <- df %>% 
+              filter(.data$metric == metric_name) %>%
+              select(.data$lake, .data$variable, .data$value)
+  
+  if (convert_units == "meterTOft") {
+    table_df$value <- NISTmeterTOft(table_df$value)
+  }
+  if (!is.na(round_precision)) {
+    table_df$value <- round((1/round_precision)*table_df$value)/(1/round_precision)
+  }
+  if (variable_breaks == "sort") {
+    variable_breaks <- sort(as.numeric(unique(table_df$variable)))
+  }
+  if (variable_labels == "breaks") {
+    variable_labels <- variable_breaks
+  } else if (variable_labels == "percent") {
+    variable_labels <- sprintf("%d%%", variable_breaks)
+  }
+  table_df$variable  <- factor(table_df$variable,
+                               levels = variable_breaks,
+                               labels = variable_labels)
+
+  table_df <- dcast(table_df, lake~variable, value.var = "value")
+  colnames(table_df) <- c("Lake", variable_labels)
+  
+  return(table_df)
+}
+```
+
+
+# Levels
+
+```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_levels(csls_levels_all, point_size = 1, convert_units = "meterTOft",
+            legend_pos = c(0.1, 0.9))
+
+plot_levels(csls_levels, point_size = 1, convert_units = "meterTOft",
+            legend_pos = c(0.1, 0.9))
+```
+
+<br>
+
+# Magnitude
+
+```{r magnitude_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=5}
+plot_magnitude(csls_levels)
+```
+
+```{r magnitude_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```
+
+## Median levels
+
+```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_level"
+metric_title    <- "Median Lake Level (ft)"
+variable_breaks <- "sort"
+variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## CV of levels
+
+```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_level"
+metric_title    <- "CV of Lake Levels (%)"
+variable_breaks <- "sort"
+variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.01)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+# Frequency
+
+```{r frequency, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+plot_frequency(csls_levels, probs = c(10, 50, 90))
+```
+
+## Exceedance probabilities
+
+```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "exceedance_level"
+metric_title    <- "Exceedance Probability Lake Levels (ft)"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## Exceedance probability ranges
+
+```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "exceedance_range"
+metric_title    <- "Exceedance Probability Range (ft)"
+variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
+variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
+                     "Monthly 10%-90%", "Monthly 25%-75%")
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+# Duration
+
+```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
+plot_duration(csls_levels_all, probs = c(10, 90), show_median = TRUE)
+```
+
+## Median duration
+
+```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_dur"
+metric_title    <- "Median Duration (months)"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(csls_metrics_all, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## CV of duration
+
+```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_dur"
+metric_title    <- "CV of Duration (%)"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(csls_metrics_all, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+# Rate of change
+
+* Add vertical lines for median rise + fall.
+* Add text annotation with value of median rise + fall
+
+```{r rate_of_change, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=7}
+plot_rate_change(csls_levels)
+```
+
+## Median rise rate
+
+```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_rise_rate"
+metric_title    <- "Median Rise Rate (ft/time period)"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## CV of rise rate
+
+```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_rise_rate"
+metric_title    <- "CV of Rise Rate (%)"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## Median fall rate
+
+```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_fall_rate"
+metric_title    <- "Median Fall Rate (ft/time period)"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## CV of fall rate
+
+```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_fall_rate"
+metric_title    <- "CV of Fall Rate (%)"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+# Timing
+
+```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_df <- csls_metrics %>%
+           filter(.data$metric == "exceedance_range") %>%
+           mutate(time = str_sub(.data$variable, 1, 1),
+                  range = str_sub(.data$variable, 3, -1)) %>%
+           mutate(range = str_replace(.data$range, "10_90", "10%-90%")) %>%
+           mutate(range = str_replace(.data$range, "25_75", "25%-75%")) %>%
+           select(.data$lake, .data$time, .data$range, .data$value)
+plot_df <- dcast(plot_df, lake+range~time, value.var = "value")
+
+
+ggplot(plot_df) +
+  geom_point(aes(x = a, y = m, color = range)) +
+  geom_abline(slope = 1, intercept = 0) +
+  facet_grid(~lake) +
+  labs(x = "Annual Range (ft)",
+       y = "Monthly Range (ft)",
+       color = "Exceed. Prob. Range") +
+  scale_color_brewer(palette = "Paired") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = text_size),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+  
+
+
+```
