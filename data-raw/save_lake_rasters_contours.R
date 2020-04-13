@@ -54,3 +54,64 @@ writeOGR(pfl_contours,
          dsn = "data-raw/contours",
          layer = "pfl_contours",
          driver = "ESRI Shapefile")
+
+# 3. PLANT SHORLINES -----------------------------------------------------------
+# LONG LAKE
+lake        <- "Long"
+lake_raster <- CSLSlevels::lake_raster[[lake]]
+lake_levels <- CSLSdata::lake_levels[[lake]]
+
+# Long Lake 8/7/2018
+plant_date      <- as_datetime(mdy("08-07-2018"))
+lake_level      <- lake_levels %>% filter(.data$date == plant_date)
+lake_level      <- lake_level$level_m
+long_2018_08_07 <- rasterToContour(lake_raster, levels = lake_level)
+writeOGR(long_2018_08_07,
+         dsn = "data-raw/shorelines",
+         layer = "long_2018_08_07",
+         driver = "ESRI Shapefile")
+
+# Long Lake 8/20/2019
+plant_date      <- as_datetime(mdy("08-20-2019"))
+lake_level      <- lake_levels %>% filter(.data$date == plant_date)
+lake_level      <- lake_level$level_m
+long_2019_08_20 <- rasterToContour(lake_raster, levels = lake_level)
+writeOGR(long_2019_08_20,
+         dsn = "data-raw/shorelines",
+         layer = "long_2019_08_20",
+         driver = "ESRI Shapefile")
+
+# PLAINFIELD LAKE
+lake        <- "Plainfield"
+lake_raster <- CSLSlevels::lake_raster[[lake]]
+lake_levels <- CSLSdata::lake_levels[[lake]]
+
+# Plainfield Lake 8/7/2018
+plant_date      <- as_datetime(mdy("08-07-2018"))
+lake_level      <- lake_levels %>% filter(.data$date == plant_date)
+lake_level      <- lake_level$level_m
+pfl_2018_08_07 <- rasterToContour(lake_raster, levels = lake_level)
+writeOGR(pfl_2018_08_07,
+         dsn = "data-raw/shorelines",
+         layer = "pfl_2018_08_07",
+         driver = "ESRI Shapefile")
+
+# Plainfield Lake 9/24/2018
+plant_date      <- as_datetime(mdy("09-24-2018"))
+lake_level      <- lake_levels %>% filter(.data$date == plant_date)
+lake_level      <- lake_level$level_m
+pfl_2018_09_24 <- rasterToContour(lake_raster, levels = lake_level)
+writeOGR(pfl_2018_09_24,
+         dsn = "data-raw/shorelines",
+         layer = "pfl_2018_09_24",
+         driver = "ESRI Shapefile")
+
+# Plainfield Lake 8/20/2019
+plant_date      <- as_datetime(mdy("08-20-2019"))
+lake_level      <- lake_levels %>% filter(.data$date == plant_date)
+lake_level      <- lake_level$level_m
+pfl_2019_08_20 <- rasterToContour(lake_raster, levels = lake_level)
+writeOGR(pfl_2019_08_20,
+         dsn = "data-raw/shorelines",
+         layer = "pfl_2019_08_20",
+         driver = "ESRI Shapefile")
