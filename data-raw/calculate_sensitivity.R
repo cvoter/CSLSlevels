@@ -9,17 +9,20 @@ library(devtools)
 calculate_summary <- function(df, obs_summary) {
   summary <- NULL
   for (nyear in 1:max(df$nyears)) {
+      message(sprintf("nyears: %d", nyear))
     this_year   <- df %>% filter(.data$nyears == nyear)
     sim_summary <- NULL
     for (nsim in 1:max(this_year$nsim)) {
       this_sim          <- this_year %>% filter(.data$nsim == !!nsim)
       this_summary      <- calculate_metrics(this_sim, col_name = "level")
       this_summary$nsim <- nsim
-      sim_summary       <- rbind(sim_summary, this_summary)
+      sim_summary[[(nyear - 1)*max(df$nsim) + nsim]]   <- this_summary
     }
+    sim_summary         <- bind_rows(sim_summary)
     sim_summary$nyear   <- nyear
-    summary             <- rbind(summary, sim_summary)
+    summary[[nyear]]    <- sim_summary
   }
+  summary <- bind_rows(summary)
   colnames(summary)[which(colnames(summary) == "value")] <- "sim"
   colnames(obs_summary)[which(colnames(obs_summary) == "value")] <- "obs"
   summary <- merge(summary,
