@@ -240,20 +240,20 @@ plot_levels(CSLSlevels::csls_levels, point_size = 1, convert_units = "meterTOft"
 
 ## Median levels
 
-**With a timeseries of 38 years,** the mean bias is below 10%, the mean variance
-is below 15%, and the mean accuracy of median levels is within 0.5 ft for all
-lakes.
+**With a timeseries of 38 years,** bias is below 10%, variance is below 15%, and
+accuracy is within 0.5 ft for all lakes.
 
-**With longer timeseries,** variance and accuracy actually worsen for timeseries
-lengths ~45 years to 75 years at Long Lake, while other lakes see a steady, but
-not dramatic, improvement in these metrics. Bias is consistently low at all
-lakes.
+**With longer timeseries,** variance and accuracy worsen for timeseries lengths
+~45 years to 75 years at Long Lake, while other lakes see a steady, but not
+dramatic, improvement. Bias is consistently low at all lakes.
 
-**Decision:** Good to use. All metrics are within acceptable ranges and do not
+**Decision:** it is acceptable to use a 38-year timeseries to calculate median
+lake levels. All measures of error are within acceptable ranges and do not
 sharply improve with longer timeseries.
 
-**Implications of using 1981-2018 timeseries:** Median levels from 1981-2018 are
-the highest of any 38 year window.
+**Implications of using 1981-2018 timeseries:** Median lake levels from
+1981-2018 (1981-2001 for Devil’s Lake) are the highest of any 38-year window and
+are also above the long-term median lake levels.
 
 ```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_level"
@@ -296,22 +296,23 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## CV of levels
 
-**With a timeseries of 38 years,** the mean bias is below 20%, the mean variance
-is below 30%, and the mean accuracy of below 0.03%. Devil's Lake has noticeably
-higher bias and RMSE compared to the Central Sands Lakes, while Pleasant Lake
-has noticeably higher variance.
+**With a timeseries of 38 years,** bias is below 20%, variance is below 30%, and
+accuracy is within 0.03%. Devil’s Lake has noticeably higher bias and RMSE
+compared to the Central Sands Lakes, while Pleasant Lake has noticeably higher
+variance than other lakes.
 
-**With longer timeseries,** bias worsens but there is noticeable improvement in
-variance at Pleasant Lake. All other metrics at all other lakes either plateau
-or gradually decline.
+**With longer timeseries,** in Pleasant Lake, bias increases and then decreases
+again and variance markedly improves. All other metrics at all other lakes
+either plateau or gradually decline.
 
-**Decision:** Good to use. All metrics are within an acceptable range and do not
-sharply improve with longer timeseries, with the exception of variance at
-Pleasant Lake.
+**Decision:** it is acceptable to use a 38-year timeseries to calculate the
+coefficient of variation in lake levels. All measures of error are within an
+acceptable range and do not sharply improve with longer timeseries, except for
+variance at Pleasant Lake.
 
-**Implications of using 1981-2018 timeseries:** The CV of levels from 1981-2018
-nearly identical to the long term CV of levels at Long Lake and Devil's Lake,
-but are among the lowest observed CVs at Pleasant and Plainfield.
+**Implications of using 1981-2018 timeseries:** The CVs of lake levels are
+nearly identical to the long-term CVs at Long and Devil’s Lakes but are among
+the lowest observed CV’s at Pleasant and Plainfield Lakes.
 
 ```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_level"
@@ -357,26 +358,31 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 
 ## Exceedance probabilities
 
-**With a timeseries of 38 years,** the mean bias is below 5%, mean variance is
-below 15%, and mean accuracy is within 0.5 ft. Mean accuracy is just above 0.5
-ft for the 10% exceedance probability at Devil's Lake, but the 10% exceedance
-probability level is not noticeably worse from other exceedance proabilities at
-other lakes.
+**With a timeseries of 38 years,** bias is below 5%, men variance is below 15%,
+and accuracy is within 0.5 ft (Figure A3). Accuracy is just above 0.5 ft for the
+10% exceedance probability at Devil’s Lake, but the 10% exceedance probability
+level is not noticeably worse than other exceedance probabilities at other
+lakes.
 
-**With longer timeseries,** the bias for all lakes and variance at Pleasant Lake
-and Devil's Lake plateau with longer timeseries. Variance and accuracy worsen
-before improving at Long Lake. All other metrics gradually but steadily improve.
+**With longer timeseries,** the bias for all lakes further improves. Variance at
+Pleasant Lake and Devil’s Lake plateau with longer timeseries. Variance and
+accuracy worsen before improving at Long Lake. All other metrics gradually but
+steadily improve with longer timeseries.
 
-**Decision:** Good to use. All metrics are within the acceptable range and do
-not sharply improve with longer timeseries. One exception to this might be 10%
-exceedance levels at Devil's Lake.
+**Decision:** it is acceptable to use a 38-year timeseries to calculate lake
+levels associated with a 10%, 25%, 50%, 75% and 90% exceedance probability. All
+measures of error are within the acceptable range and do not sharply improve
+with longer timeseries. One exception to this might be 10% exceedance levels at
+Devil’s Lake.
 
-**Implications of using 1981-2018 timeseries:** Infrequent high levels are
-fairly close to their long term values, but median levels and infrequent low
-levels are high for Pleasant and Plainfield Lake. At Long Lake, only the middle
-exceedance levels (25%, 50%, 75%) are substantially higher than the long term
-values. This is likely because there are many observations at Long Lake during
-the low period in the mid-2000s.
+**Implications of using 1981-2018 timeseries:** The selection of 1981-2018
+(1981-2001 for Devil’s Lake) causes some or all exceedance probability levels to
+be higher than the long-term values. At Pleasant and Plainfield Lakes,
+infrequent high levels (10% and 25% exceedance probabilities) are reasonably
+close to their long-term values, but median levels and infrequent low levels
+(75% and 90% exceedance probabilities) are high. At Long Lake, only the middle
+exceedance levels (25%, 50%, 75%) are substantially higher than the long-term
+values. At Devil’s Lake, all levels are higher than their long-term values.
 
 ```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_level"
@@ -419,20 +425,28 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## Exceedance probability ranges
 
-**With a timeseries of 38 years,** the mean bias is less than 25%, mean variance
-is within 40%, and mean accuracy is within 0.7 ft.
+**With a timeseries of 38 years,** bias is less than 25%, variance is within
+40%, and accuracy is within 0.7 ft.
 
-**With longer timeseries,** many metrics noticibly improve, though some (e.g.,
-Pleasant Lake bias, Plainfield Lake variance) sorsen before improving and others
-plateau until much longer timseries (e.g., accuracy at Pleasant, Long, and
-Plainfield).
+**With longer timeseries,** many measures of error noticeably improve, though
+some (e.g., Pleasant Lake bias, Plainfield Lake variance) worsen before
+improving and others plateau until much longer timeseries (e.g., accuracy at
+Pleasant, Long, and Plainfield). Measures of error are generally worse for the
+range between the 25% and 75% exceedance probabilities than they are for the
+range between 10% and 90% exceedance probabilities, with the exception of
+accuracy and Pleasant Lake (where both ranges are similar) and accuracy at
+Plainfield and Devil’s Lakes (where 10%-90% are worse than 25%-75%).
 
-**Decision:** Do not use. These ranges are not as robust as the levels
-themselves and error is generally not within acceptable ranges.
+**Decision:** it is not acceptable to use a 38-year timeseries to calculate the
+range between the 25% and 75% exceedance probabilities. These ranges are not as
+robust as the levels themselves and error is generally not within acceptable
+ranges. However, it is acceptable to use the range between the 10% and 90%
+exceedance probabilities, as measures of error for this range are more
+consistently within acceptable levels.
 
 **Implications of using 1981-2018 timeseries:** There is no systematic pattern
-in whether ranges are above, below, or close to their long term values, which
-may be another reason to not use this metric.
+in whether exceedance probability ranges are above, below, or close to the
+long-term value.
 
 ```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_range"
@@ -478,16 +492,23 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft)")
 
 ## Median duration
 
-**With a timeseries of 38 years,** the mean bias is over 100%, mean variance is
-over 100% and mean RMSE is as high as 20 months.
+**With a timeseries of 38 years,** bias is over 100%, variance is over 100% and
+RMSE is as high as 20 months.
 
-**With longer timeseries,** most metrics improve, but none are within acceptable
-ranges until very close to the full timeseries.
+**With longer timeseries,** most measures of error improve, but none are within
+acceptable ranges until very close to the full timeseries. Some measures of
+error (e.g., Pleasant Lake 75% bias and accuracy, Devil’s Lake 10% variance)
+remain high even at the longest period of record.
 
-**Decision:** Median duration must be calculated using the full timeseries.
+**Decision:** the full timeseries must be used to calculate median duration.
+Some measures of error remain high even with timeseries as long as 90 years.
 
-**Implications of using 1981-2018 timeseries:** It will be difficult to compare
-duration from the MODFLOW model results with historical durations.
+**Implications of using 1981-2018 timeseries:** The median durations calculated
+using 1981-2018 timeseries (1981-2001 for Devil’s Lake) are reasonably close to
+long-term values. However, per our evaluation of the time period of analysis,
+there is too much uncertainty to reasonably use a short timeseries to estimate
+typical duration at or in excess of infrequent high or low lake levels, so we
+will not use these to describe the historical lake level regime.
 
 ```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_dur"
@@ -529,18 +550,23 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (months)")
 
 ## CV of duration
 
-**With a timeseries of 38 years,** the mean bias is within 50%, the mean
-variance is within 50%, and the mean accuracy is within 125%.
+**With a timeseries of 38 years,** bias is within 50%, variance is within 50%,
+and accuracy is within 125%.
 
 **With longer timeseries,** most metrics improve, but none are within acceptable
 ranges until very close to the full timeseries.
 
-**Decision:** CV of duration must also be calculated using the full timeseries.
+**Decision:** the full timeseries must be used to calculate the coefficient of
+variation for duration. Some measures of error meet our targets at timeseries of
+90 years, but the full period of record is necessary to meet the target for all
+metrics on all lakes.
 
-**Implications of using 1981-2018 timeseries:** Just as the median duration is
-not capture well with short timeseries, the variance in duration is not captured
-well by short timeseries. This will also be difficult to evaluate using MODFLOW
-model results.
+**Implications of using 1981-2018 timeseries:** The CV of durations calculated
+using 1981-2018 timeseries (1981-2001 for Devil’s Lake) are reasonably close to
+long-term values. However, per our evaluation of the time period of analysis,
+there is too much uncertainty to reasonably use a short timeseries to estimate
+typical duration at or in excess of infrequent high or low lake levels, so we
+will not use these to describe the historical lake level regime.
 
 ```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_dur"
@@ -585,17 +611,20 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (%)")
 
 ## Median rise rate
 
-**With a timeseries of 38 years,** the mean bias is within 15%, the mean
-variance is within 20%, and the mean accuracy is within 0.1 ft/time period.
+**With a timeseries of 38 years,** bias is within 15%, variance is within 20%,
+and accuracy is within 0.1 ft/time period.
 
-**With longer timeseries,** mean bias does not substantially improve, but
-variance and accuracy gradually continue to decline.
+**With longer timeseries,** bias does not substantially improve (except in
+Devils Lake), but variance and accuracy gradually continue to decline.
 
-**Decision:** Ok to use all, but focus on monthly and seasonal rise/fall rates.
-Annual rise/fall rate is less robust.
+**Decision:** it is acceptable to use a 38-year timeseries to calculate the
+median rise/fall rate. All measures of error are within the acceptable range,
+however monthly and seasonal rise/fall rates are more robust than annual
+rise/fall rates.
 
-**Implications of using 1981-2018 timeseries:** Rates are quite close (within
-0.1 ft/time period) of long term rates, this metric is quite robust.
+**Implications of using 1981-2018 timeseries:** Rates of change appear to be
+relatively insensitive to the selection of a wet period. Median rates of changes
+are within 0.1 ft/time period of the long-term median rates of change.
 
 ```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_rise_rate"
@@ -635,19 +664,22 @@ kableExtra::kable(table_df, caption = "Mean 38 year Difference (ft/time period)"
 
 ## CV of rise rate
 
-**With a timeseries of 38 years,** the mean bias is within 10%, mean variance is
-within 15%, and mean RMSE is within 5% for monthly and seasonal rates. Annual
-rates are within 10%.
+**With a timeseries of 38 years,** bias is within 10%, variance is within 15%,
+and accuracy is within 5% for monthly and seasonal rates. Accuracy of annual
+rates is within 10%.
 
-**With longer timeseries,** mean bias does not substantially improve, but
-variance and accuracy gradually continue to decline.
+**With longer timeseries,** bias does not substantially improve (except in
+Devils Lake), but variance and accuracy gradually continue to decline.
 
-**Decision:** Ok to use all, but would be reasonable to only use monthly and
-seasonal rates.
+**Decision:** it is acceptable to use a 38-year timeseries to calculate the
+coefficient of variation in rise/fall rate. All measures of error are within the
+acceptable range, however monthly and seasonal rise/fall rates are more robust
+than annual rise/fall rates.
 
-**Implications of using 1981-2018 timeseries:** the CV of rise rates are quite a
-bit different from the long term values, but there is no clear pattern to these
-differences.
+**Implications of using 1981-2018 timeseries:** Rates of change appear to be
+relatively insensitive to the selection of a wet period. The CV of rates of
+change is sometimes similar and sometimes an outlier, but there is no clear
+pattern to these differences.
 
 ```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_rise_rate"

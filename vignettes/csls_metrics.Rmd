@@ -36,8 +36,45 @@ csls_metrics_all <- calculate_metrics(csls_levels_all)
 
 # Overview
 
+2017 Wisconsin Act 10 requires the DNR to evaluate and model the hydrology of
+Pleasant Lake, Plainfield Lake and Long Lake, all located in Waushara County,
+and determine if groundwater withdrawals are causing a significant reduction of
+the lake’s average seasonal water level. This document will describe the
+methodology used to define the average seasonal water level for each lake and
+the decisions made to arrive at the results as part of the Central Sands Lakes
+Study (CSLS).
 
-<br>
+## Physical Setting
+
+The three lakes named in the study are all seepage lakes located on glacial
+moraine deposits near a groundwater divide. The geology of the area can
+generally be described as sand and gravel, with some fine-grained sediments,
+overlying sandstone and/or crystalline bedrock. Thickness of the unconsolidated
+is typically between 100-200 feet with some variation in bedrock surface
+creating areas of deeper or shallower sediments.
+
+Their location near the groundwater divide and the highly transmissive nature of
+the aquifer cause the study lakes, and some other lakes in the Central Sands
+Region, to be responsive to changes in precipitation even though most of their
+water comes from groundwater inflow;  lakes fluctuate on the order of tens of
+feet due to wet or dry conditions. This can equate to a reduction (or rise) of
+50% of the maximum lake depth for the shallower lakes and led us to pursue a
+holistic definition of average seasonal water level. Using multiple metrics to
+describe streamflow regimes is common practice, but to the best of our knowledge
+it is a novel approach for describing lake level regime.
+
+## Natural Hydrologic Regimes
+
+Since there is little precedent defining lake level regimes, we relied upon a seminal framework in streamflow hydrology known as the “natural flow regime” (Poff et al., 1997). A central tenant of this framework is that “…the integrity of flowing water systems depends largely on their natural dynamic character.” There are strong parallels for the three lakes named in the CSLS. Because seepage lakes have no inlet or outlet, their fluctuations are more dramatic and closely track climatic variations. In our definition of lake level regimes, we capture all five components of the natural flow regime as presented by Poff et al. (1997): 
+
+  1.	**Magnitude**, the range in   elevations of a lake’s water levels
+  2.	**Frequency**, how often a lake level reaches a certain elevation per unit
+  time
+  3.	**Duration**, the amount of time that a given lake level elevation is
+  exceeded
+  4.	**Rate of change**, how quickly a lake level changes 
+  5.	**Timing** or predictability, the regularity with which a given magnitude
+  is exceeded
 
 ```{r calc, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -76,33 +113,118 @@ create_table <- function(df,
 }
 ```
 
+<br>
 
-# Levels
+# Historical Lake Levels
 
-```{r levels, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+Following the passage of Act 10, Wisconsin DNR and partners from Waushara and
+Marquette County began regularly measuring water level elevations on the three
+study lakes and other lakes within the model domain. In addition, DNR and USGS
+installed continuously monitoring lake level gages in the spring of 2018 on all
+three lakes. Historical water level observations were also gathered from
+Waushara County lake monitoring records, the USGS National Water Inventory
+System, and shoreline elevations derived from historical aerial photos. Multiple
+point observations within months were averaged to a monthly mean. In total,
+there were 44 monthly observations for both Pleasant Lake and Plainfield Lake
+and 73 monthly observations for Long Lake. However, this record was highly
+skewed, with recent months (i.e., post-2017) sampled more frequently than the
+past.
+
+To compensate for this skewed record, DNR developed an imputation process to
+estimate monthly water levels across the full range of historical hydrologic
+variation. The first step involved calculating the cumulative deviation from 60
+month moving mean (CDM) precipitation from 1900 to 2018, and then centering
+these values on the mean cumulative deviation and scaling by the standard
+deviation of cumulative deviations, or “standardizing” the values. This
+standardized value has been shown to accurately approximate groundwater level
+variation at most sites in Wisconsin (Smail et. al, 2019). The mean and standard
+deviation of each lake’s water level elevation record were estimated from
+pairwise comparisons of the standardized CDM and observed levels. These summary
+values were used to convert the standardized CDM timeseries to estimated water
+level elevations in meters above mean sea level for each month between 1905 and
+2018 for each lake.
+
+This initial CDM-based estimate was then used as an input to a Bayesian
+Structural Time Series modeling process that probabilistically imputed gaps in
+the observed lake level record (Figure 1). This machine learning process used
+5000 Monte Carlo-Markov Chain draws to compute the most likely water level for
+any time step given known water levels and historical variation. Variables
+included in this process were the antecedent linear trend in observed levels,
+the observed seasonal variation in the CDM, any long-term trends, and the
+historical relationship between the CDM and observed levels. Timeseries of water
+levels were created for each lake from 1900 to 2020 representing the most likely
+water level given existing observations and the historical variability in
+precipitation (Figure 2).
+
+```{r levels01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 2.** Estimated lake levels for each lake (lines) with observations (points) from 1905-2018."}
 plot_levels(csls_levels_all, point_size = 1, convert_units = "meterTOft",
             legend_pos = c(0.1, 0.9))
+```
 
+<br>
+
+# Time Period of Analysis 
+
+We defined the lake level regime of each lake using the same time period as the
+CSLS groundwater flow model: 1981-2018 (Figure 3). The groundwater flow model is
+a transient simulation of the groundwater system using the MODFLOW and Soil
+Water Balance computer codes. These codes use data regarding climate, land use,
+pumping, and intrinsic properties of the aquifer (amongst other parameters) to
+predict groundwater levels throughout the system, including the water levels in
+the three study lakes. Although the imputed timeseries of monthly lake levels
+dates to 1905, the groundwater flow model can simulate lake levels only during
+periods for which daily, spatially-gridded precipitation and air temperature
+data are input. Several datasets were considered for groundwater flow model
+inputs (e.g., Daly et al., 2015, Livneh et al., 2015). We decided the best
+choice was PRISM (Parameter-elevation Regressions on Independent Slopes Model)
+because the availability of daily PRISM data (1981-2018) includes the timeframe
+of groundwater model calibration data (2011-2018) and the unusually high water
+levels of recent years whereas coverage from other options was limited to
+pre-2013. It is important to be able to directly compare imputed lake level
+regimes to groundwater model-simulated lake level regimes because we have no
+other way of comparing current land use conditions to pre-pumping conditions.
+While central pivots did not become widespread until the 1960s, irrigated
+agriculture has been practiced in the Central Sands prior to any available
+climate data, so it is not possible to use precipitation models to impute
+undisturbed lake levels. Furthermore, lake observations begin ~1940 and are more
+prevalent post-2000, lending greater certainty to lake level predictions in the
+more recent record.
+
+```{r levels02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 3.** Estimated lake levels for each lake (lines) with observations (points) from 1981-2018."}
 plot_levels(csls_levels, point_size = 1, convert_units = "meterTOft",
             legend_pos = c(0.1, 0.9))
 ```
 
 <br>
 
-# Magnitude
+# Historical Lake Level Regimes
 
-```{r magnitude_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=5}
+## 1. Magnitude
+
+At all lakes, median lake levels do not vary substantially by month (Figure 4,
+Table 1). Median lake levels are within 0.5 ft of one another at Pleasant and
+Long Lakes and within 0.7 ft of one another at Plainfield Lake. There is also no
+consistent pattern as to when median lake levels are slightly higher vs.
+slightly lower at the three study lakes.
+
+Although Pleasant Lake is the largest and deepest lake, it displays the least
+variability in lake water levels (Figure 4, Table 2). Pleasant Lake has a
+maximum range in lake water levels of less than 4 ft while Plainfield Lake can
+vary by nearly 5 ft and Long Lake is the most variable with a range of over 6
+ft. The coefficient of variation in lake levels is very stable across months
+(Table 2) and illustrates this same pattern in variability: Long Lake has the
+most variable water levels, followed by Plainfield Lake, and finally Pleasant
+Lake.
+
+```{r magnitude_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=5, fig.cap="**Figure 4.** Range in lake elevations (ft) for entire timeseries (“Overall”) as well as each month for each study lake. All y-axes cover the same range so differences in lake elevation are comparable across plots."}
 plot_magnitude(csls_levels)
 ```
 
-```{r magnitude_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-```
-
-## Median levels
+<br>
 
 ```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_level"
-metric_title    <- "Median Lake Level (ft)"
+metric_title    <- "**Median Lake Level (ft)**"
 variable_breaks <- "sort"
 variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                     "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -114,11 +236,11 @@ table_df <- create_table(csls_metrics, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-## CV of levels
+<br>
 
 ```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_level"
-metric_title    <- "CV of Lake Levels (%)"
+metric_title    <- "**CV of Lake Levels (%)**"
 variable_breaks <- "sort"
 variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                     "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -132,17 +254,35 @@ kableExtra::kable(table_df, caption = metric_title)
 
 <br>
 
-# Frequency
+## 2. Frequency
 
-```{r frequency, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5}
+Lake level frequency is normally distributed at Pleasant Lake but is skewed
+toward high lake levels at Long and Plainfield Lakes (Figure 5, Table 3). As an
+illustration, at Pleasant Lake, the difference between the median lake level
+(50% exceedance probability) and infrequent high level (10% exceedance
+probability) or infrequent low level (90% exceedance probability) is similar
+(0.3 ft vs. 0.4 ft). At Plainfield Lake, the difference between the 50% and 90%
+exceedance probability levels is noticeably larger than the difference between
+the 50% and 10% exceedance probability levels (1.5 ft vs. 1.0 ft). At Long Lake,
+this difference is larger yet (2.7 ft vs. 2.0 ft).
+
+Even though Pleasant Lake is the largest and deepest of the study lakes, Long
+and Plainfield Lakes have a larger range in lake levels (Figure 5). In addition,
+lake levels at Plainfield Lake and especially Long Lake are more uniformly
+distributed than they are at Pleasant Lake. This is further indication that lake
+levels at Long and Plainfield Lakes are more variable than at Pleasant Lake.
+Both lakes, but particularly Long Lake, experience extremes (both high and low
+levels) more regularly than Pleasant Lake does.
+
+```{r frequency, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5, fig.cap="**Figure 5.** Distribution of lake elevations (ft) with 10%, 50%, and 90% exceedance probabilities noted. All x-axes cover the same range so differences in lake elevation are comparable across plots."}
 plot_frequency(csls_levels, probs = c(10, 50, 90))
 ```
 
-## Exceedance probabilities
+<br>
 
 ```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "exceedance_level"
-metric_title    <- "Exceedance Probability Lake Levels (ft)"
+metric_title    <- "**Exceedance Probability Lake Levels (ft)**"
 variable_breaks <- "sort"
 variable_labels <- "percent"
 
@@ -153,33 +293,39 @@ table_df <- create_table(csls_metrics, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-## Exceedance probability ranges
+<br>
 
-```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-metric_name     <- "exceedance_range"
-metric_title    <- "Exceedance Probability Range (ft)"
-variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
-variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
-                     "Monthly 10%-90%", "Monthly 25%-75%")
+## 3. Duration
 
-table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
-                         variable_labels, convert_units = "meterTOft",
-                         round_precision = 0.1)
+Per our evaluation of the time period of analysis, there is too much uncertainty
+to reasonably use a short timeseries (i.e., 1981-2018) to estimate typical
+duration at/in excess of infrequent high or low lake levels. Because of this, we
+used the complete period of record (1905-2018) to evaluate duration (Figure 6,
+Tables 4 and 5).
 
-kableExtra::kable(table_df, caption = metric_title)
-```
+All lakes typically spend a short amount of time at or in excess of infrequent
+high and low levels. The median duration at/above the 10% exceedance probability
+level is 2 to 4 months while the median duration at/below the 90% exceedance
+probability level is 1 to 3 months (Figure 6, Table 4). However, this duration
+is extremely variable (Figure 6, Table 5). At Long and Plainfield Lakes, lake
+levels have remained at/above the 10% exceedance probability level for 4-5 years
+and at Pleasant Lake this duration has been over 2 years at times. Similarly,
+lake levels have remained at/below the 90% exceedance probability level for 2
+years at Long Lake, over 3 years at Plainfield Lake, and over 5 years at
+Pleasant Lake. This indicates it is challenging to evaluate whether the duration
+of a period of high or low water levels at these lakes is “typical” and it may
+be more useful to evaluate changes in duration exclusively in terms of whether
+they may lead to substantial differences in ecological factors.
 
-# Duration
-
-```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
+```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5, fig.cap="**Figure 6.** Distribution of durations above the 10% exceedance probability level and below the 90% exceedance probability level for all lakes, using the complete 1905-2018 timeseries, with the median duration noted."}
 plot_duration(csls_levels_all, probs = c(10, 90), show_median = TRUE)
 ```
 
-## Median duration
+<br>
 
 ```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_dur"
-metric_title    <- "Median Duration (months)"
+metric_title    <- "**Median Duration (months)**"
 variable_breaks <- "sort"
 variable_labels <- "percent"
 
@@ -190,11 +336,11 @@ table_df <- create_table(csls_metrics_all, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-## CV of duration
+<br>
 
 ```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_dur"
-metric_title    <- "CV of Duration (%)"
+metric_title    <- "**CV of Duration (%)**"
 variable_breaks <- "sort"
 variable_labels <- "percent"
 
@@ -207,20 +353,25 @@ kableExtra::kable(table_df, caption = metric_title)
 
 <br>
 
-# Rate of change
+## 4. Rate of change
 
-* Add vertical lines for median rise + fall.
-* Add text annotation with value of median rise + fall
+At all lakes across all time periods (1 month, 3 months, and 12 months), lake
+levels generally rise at approximately the same rate that they fall (Figure 7,
+Table 6). Median rates of change at the lakes are slightly higher at Long Lake
+for all time periods than at Pleasant or Plainfield Lakes, but these differences
+are only substantial when evaluated over a 12 month period. Long Lake can vary
+by as much as 2 ft over a 12 month period, while Plainfield Lake generally
+varies by 1.5 ft or less, and Pleasant Lake rarely varies by more than 1 ft.
 
-```{r rate_of_change, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=7}
+```{r rate_of_change, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=7, fig.cap="**Figure 7.** Distribution of rates of change for lake levels over 1 month, 3 months, and 12 months with median fall rate and median rise rate noted with vertical lines."}
 plot_rate_change(csls_levels)
 ```
 
-## Median rise rate
+<br>
 
 ```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_rise_rate"
-metric_title    <- "Median Rise Rate (ft/time period)"
+metric_title    <- "**Median Rise Rate (ft/time period)**"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
 
@@ -231,11 +382,11 @@ table_df <- create_table(csls_metrics, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-## CV of rise rate
+<br>
 
 ```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_rise_rate"
-metric_title    <- "CV of Rise Rate (%)"
+metric_title    <- "**CV of Rise Rate (%)**"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
 
@@ -246,11 +397,11 @@ table_df <- create_table(csls_metrics, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-## Median fall rate
+<br>
 
 ```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "median_fall_rate"
-metric_title    <- "Median Fall Rate (ft/time period)"
+metric_title    <- "**Median Fall Rate (ft/time period)**"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
 
@@ -261,11 +412,11 @@ table_df <- create_table(csls_metrics, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-## CV of fall rate
+<br>
 
 ```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 metric_name     <- "cv_fall_rate"
-metric_title    <- "CV of Fall Rate (%)"
+metric_title    <- "**CV of Fall Rate (%)**"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
 
@@ -276,9 +427,23 @@ table_df <- create_table(csls_metrics, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 
-# Timing
+<br>
 
-```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+## 5. Timing
+
+Lake levels at all lakes are as variable across months and across seasons as
+they are across years. One illustration of this can be seen in the median and CV
+of lake levels (Figure 4, Tables 1 and 2), which show very little variation
+across months. Another indication that lake levels are as variable across
+seasons as they are across years is that the range between high and low levels
+(10%-90% and 25%-75% exceedance probabilities) is nearly the same when
+calculated using monthly lake level data as it is when calculated using mean
+annual lake levels (Figure 8, Table 8). This indicates that any seasonal
+predictability in high and low levels is dwarfed by interannual variability in
+lake levels. Thus, any evaluation of “average seasonal lake levels” must needs
+equate to an evaluation of “average lake levels”.
+
+```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 8.** Comparison between the range in lake levels between the 10% and 90% exceedance probabilities and the 25% and 75% exceedance probabilities as calculated using monthly lake level data vs. mean annual lake level data. 1:1 relationship denoted with solid black line."}
 plot_df <- csls_metrics %>%
            filter(.data$metric == "exceedance_range") %>%
            mutate(time = str_sub(.data$variable, 1, 1),
@@ -304,7 +469,20 @@ ggplot(plot_df) +
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         legend.position = "top")
-  
+```
 
+<br>
 
+```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "exceedance_range"
+metric_title    <- "**Exceedance Probability Range (ft)**"
+variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
+variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
+                     "Monthly 10%-90%", "Monthly 25%-75%")
+
+table_df <- create_table(csls_metrics, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
 ```
