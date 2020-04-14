@@ -20,6 +20,7 @@
 #' @param density_color color of density curve with alpha = 0.2, defaults to a
 #'                      red ("#c00000")
 #' @param line_size line size, defaults to 1
+#' @param bin_size width of bins, defaults to 2 months.
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
@@ -39,19 +40,23 @@ plot_duration <- function(df,
                           vline_color = "#c00000",
                           hist_color = "grey80",
                           density_color = "#c00000",
-                          line_size = 1) {
+                          line_size = 1,
+                          bin_size = 2) {
 
   colnames(df)[which(colnames(df) == "level_pred")] <- "level"
   durations <- calculate_durations(df, probs)
   durations$variable <- factor(durations$variable,
                                levels = levels(durations$variable),
                                labels = sprintf("%s%%", levels(durations$variable)))
+  if (!is.null(max_months)) {
+    durations$value[durations$value > max_months] <- max_months
+  }
 
   # Basic histogram w/lines for estimate, points for observations
   plot_obj <- ggplot(data = durations,
                      aes(x = .data$value)) +
               geom_histogram(aes(y = ..density..),
-                             binwidth = 2,
+                             binwidth = bin_size,
                              colour = NA,
                              fill = hist_color,
                              size = line_size) +
@@ -100,7 +105,10 @@ plot_duration <- function(df,
   } else {
     plot_obj <- plot_obj +
                 scale_x_continuous(expand = c(0,0),
-                                   limits = c(0, max_months))
+                                   limits = c(0, max_months+bin_size),
+                                   breaks = seq(0,max_months,5),
+                                   labels = c(as.character(seq(0,max_months-5,5)),
+                                              sprintf(">%d", max_months)))
   }
 
   # Add in aesthetics

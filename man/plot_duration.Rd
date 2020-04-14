@@ -15,7 +15,8 @@ plot_duration(
   vline_color = "#c00000",
   hist_color = "grey80",
   density_color = "#c00000",
-  line_size = 1
+  line_size = 1,
+  bin_size = 2
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ median number of months.}
 red ("#c00000")}
 
 \item{line_size}{line size, defaults to 1}
+
+\item{bin_size}{width of bins, defaults to 2 months.}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.

@@ -158,7 +158,7 @@ precipitation (Figure 2).
 
 ```{r levels01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 2.** Estimated lake levels for each lake (lines) with observations (points) from 1905-2018."}
 plot_levels(csls_levels_all, point_size = 1, convert_units = "meterTOft",
-            legend_pos = c(0.1, 0.9))
+            legend_pos = c(0.1, 0.9), grid_off = FALSE)
 ```
 
 <br>
@@ -192,7 +192,7 @@ more recent record.
 
 ```{r levels02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 3.** Estimated lake levels for each lake (lines) with observations (points) from 1981-2018."}
 plot_levels(csls_levels, point_size = 1, convert_units = "meterTOft",
-            legend_pos = c(0.1, 0.9))
+            legend_pos = c(0.1, 0.9), grid_off = FALSE)
 ```
 
 <br>
@@ -318,7 +318,16 @@ be more useful to evaluate changes in duration exclusively in terms of whether
 they may lead to substantial differences in ecological factors.
 
 ```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5, fig.cap="**Figure 6.** Distribution of durations above the 10% exceedance probability level and below the 90% exceedance probability level for all lakes, using the complete 1905-2018 timeseries, with the median duration noted."}
-plot_duration(csls_levels_all, probs = c(10, 90), show_median = TRUE)
+plot_duration(csls_levels_all, 
+              probs = c(10, 90), 
+              show_median = TRUE, 
+              bin_size = 2)
+plot_duration(csls_levels_all, 
+              probs = c(10, 90), 
+              show_median = TRUE, 
+              bin_size = 1,
+              max_months = 20)
+
 ```
 
 <br>
@@ -443,25 +452,26 @@ predictability in high and low levels is dwarfed by interannual variability in
 lake levels. Thus, any evaluation of “average seasonal lake levels” must needs
 equate to an evaluation of “average lake levels”.
 
-```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 8.** Comparison between the range in lake levels between the 10% and 90% exceedance probabilities and the 25% and 75% exceedance probabilities as calculated using monthly lake level data vs. mean annual lake level data. 1:1 relationship denoted with solid black line."}
+```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=4, fig.height=3, fig.cap="**Figure 8.** Comparison between the range in lake levels between the 10% and 90% exceedance probabilities and the 25% and 75% exceedance probabilities as calculated using monthly lake level data vs. mean annual lake level data. 1:1 relationship denoted with solid black line."}
 plot_df <- csls_metrics %>%
            filter(.data$metric == "exceedance_range") %>%
            mutate(time = str_sub(.data$variable, 1, 1),
                   range = str_sub(.data$variable, 3, -1)) %>%
            mutate(range = str_replace(.data$range, "10_90", "10%-90%")) %>%
            mutate(range = str_replace(.data$range, "25_75", "25%-75%")) %>%
+           filter(.data$range != "25%-75%") %>%
            select(.data$lake, .data$time, .data$range, .data$value)
 plot_df <- dcast(plot_df, lake+range~time, value.var = "value")
 
 
 ggplot(plot_df) +
-  geom_point(aes(x = a, y = m, color = range)) +
+  geom_point(aes(x = a, y = m, shape = lake), 
+             color = "black",
+             size = 2) +
   geom_abline(slope = 1, intercept = 0) +
-  facet_grid(~lake) +
   labs(x = "Annual Range (ft)",
        y = "Monthly Range (ft)",
-       color = "Exceed. Prob. Range") +
-  scale_color_brewer(palette = "Paired") +
+       shape = "") +
   theme_bw() +
   theme(text = element_text(family = "Segoe UI Semilight",
                             size = text_size),

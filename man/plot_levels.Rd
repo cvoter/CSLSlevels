@@ -19,7 +19,8 @@ plot_levels(
   point_size = 3,
   npretty_breaks = NULL,
   force_pfl = TRUE,
-  convert_units = ""
+  convert_units = "",
+  grid_off = TRUE
 )
 }
 \arguments{
@@ -64,6 +65,8 @@ periods of record)}
 
 \item{convert_units}{logical defulats to "". If "metersTOft", converts values
 from meters to feet.}
+
+\item{grid_off}{defaults to TRUE to turn off gridlines.}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.
