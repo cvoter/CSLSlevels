@@ -33,6 +33,7 @@
 #' @param force_pfl defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.
 #' @param convert_units logical defulats to "". If "metersTOft", converts values
 #'                      from meters to feet.
+#' @param grid_off defaults to TRUE to turn off gridlines.
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
 #' @importFrom raster minValue
@@ -59,7 +60,8 @@ plot_levels <- function(df,
                         point_size = 3,
                         npretty_breaks = NULL,
                         force_pfl = TRUE,
-                        convert_units = "") {
+                        convert_units = "",
+                        grid_off = TRUE) {
 
   if (convert_units == "meterTOft") {
     df$level_pred <- NISTmeterTOft(df$level_pred)
@@ -142,10 +144,13 @@ plot_levels <- function(df,
               theme(text = element_text(family = "Segoe UI Semilight",
                                         size = text_size),
                     plot.title = element_text(hjust = 0.5),
-                    panel.grid.major = element_blank(),
-                    panel.grid.minor = element_blank(),
                     legend.position = legend_pos,
                     legend.background = element_blank())
+  if (grid_off) {
+    plot_obj <- plot_obj +
+                theme(panel.grid.major = element_blank(),
+                      panel.grid.minor = element_blank())
+  }
 
   return(plot_obj)
 }
