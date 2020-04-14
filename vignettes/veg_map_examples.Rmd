@@ -1,0 +1,268 @@
+---
+title: "Veg Map Examples"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Veg Maps}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(lubridate)
+library(reshape2)
+library(CSLSlevels)
+library(ggplot2)
+library(extrafont)
+```
+
+```{r pfl, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+lake <- "Plainfield"
+
+# Desired resolution of areas and lake extents
+contour_interval <- 0.05
+
+# Veg classes currently hardwired to search for an "upland" (very driest) and
+# "submergent" (very wettest) class, but otherwise number and names of
+# vegetation classes can be changed as desired. Just needs to be consisistent
+# across the "deepest" and "shallowest" data frames.
+
+# Deepest limits of veg classes in feet. Assumes submergent can go to deepest
+# part of lake (but can input specific depth if desired)
+deepest <- data.frame(upland = -1,
+                      inland_beach = 1.6,
+                      emergent = 7,
+                      floating = 10)
+
+# Shallow limits of veg classes in feet. Assumes no limit to upland vegetation
+# (but can input specific depth if desired).
+shallowest <- data.frame(floating = 5,
+                         submergent = 1.6,
+                         emergent = -1,
+                         inland_beach = -1.6)
+
+# Get lake level by date, exceedance probablility, or specifying
+# By date
+lake_levels <- CSLSdata::lake_levels[[lake]]
+lake_levels <- lake_levels %>%
+               filter(.data$date == as_datetime(mdy("08-07-2018")))
+lake_level_ex1  <- lake_levels$level_m
+# By exceedance probability
+lake_levels <- CSLSlevels::csls_levels
+lake_levels <- lake_levels %>%
+               filter(year(.data$date) >= 1981,
+                      year(.data$date) <= 2018) %>%
+               mutate(level = .data$level_pred)
+exceedance  <- calculate_exceedances(lake_levels, probs = 50)
+exceedance  <- exceedance %>%
+               filter(.data$lake == !!lake)
+lake_level_ex2  <- exceedance$value
+# Specify
+lake_level_ex3  <- 333
+
+# Plot veg outlines at lake level.
+# Can adjust other aesthetics as well (e.g. text size, legend position, etc.)
+plot_veg_outlines(lake, lake_level_ex1, deepest, shallowest, contour_interval)
+
+# Caculate areas and percent area cover of each vegetation class
+# areas$area is veg habitat areas corresponding to given lake elevations in units L^2
+# areas$crs_units indicates what units L are (e.g., m for meters)
+# areas$pcnt is percent veg habitat areas corresponding to given lake elevations
+areas <- calculate_veg_area(lake, deepest, shallowest, contour_interval)
+
+# Extract percent area cover for closest elevation to desired lake level
+# Alternatively, could develop interpolation functions for each class using "approx".
+areas$pcnt[which.min(abs(areas$pcnt$elev - lake_level_ex2)),]
+
+# Plot areas
+# To Do: make into separate function, with on/off switch for facet grids,
+# arguments for color hex codes, text size, etc.
+plot_areas <- melt(areas$pcnt, id.vars = "elev")
+ggplot(data = plot_areas) +
+  geom_path(aes(x = value, y = elev, color = variable),
+            size = 1) +
+  facet_grid(~variable) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(limits = c(0,100),
+                     expand = c(0,0)) +
+  scale_color_manual(values = c("#B15928", "#FDBF6F", "#B2DF8A", "#33A02C", 
+                                "#1F78B4")) +
+  labs(x = "Lake Area with Suitable Habitat",
+       y = "Lake Elevation (m)",
+       color = "") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = 12),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+```
+
+```{r long, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+lake <- "Long"
+
+# Desired resolution of areas and lake extents
+contour_interval <- 0.05
+
+# Veg classes currently hardwired to search for an "upland" (very driest) and
+# "submergent" (very wettest) class, but otherwise number and names of
+# vegetation classes can be changed as desired. Just needs to be consisistent
+# across the "deepest" and "shallowest" data frames.
+
+# Deepest limits of veg classes in feet. Assumes submergent can go to deepest
+# part of lake (but can input specific depth if desired)
+deepest <- data.frame(upland = -1,
+                      inland_beach = 1.6,
+                      emergent = 7,
+                      floating = 10)
+
+# Shallow limits of veg classes in feet. Assumes no limit to upland vegetation
+# (but can input specific depth if desired).
+shallowest <- data.frame(floating = 5,
+                         submergent = 1.6,
+                         emergent = -1,
+                         inland_beach = -1.6)
+
+# Get lake level by date, exceedance probablility, or specifying
+# By date
+lake_levels <- CSLSdata::lake_levels[[lake]]
+lake_levels <- lake_levels %>%
+               filter(.data$date == as_datetime(mdy("08-07-2018")))
+lake_level_ex1  <- lake_levels$level_m
+# By exceedance probability
+lake_levels <- CSLSlevels::csls_levels
+lake_levels <- lake_levels %>%
+               filter(year(.data$date) >= 1981,
+                      year(.data$date) <= 2018) %>%
+               mutate(level = .data$level_pred)
+exceedance  <- calculate_exceedances(lake_levels, probs = 50)
+exceedance  <- exceedance %>%
+               filter(.data$lake == !!lake)
+lake_level_ex2  <- exceedance$value
+# Specify
+lake_level_ex3  <- 333
+
+# Plot veg outlines at lake level.
+# Can adjust other aesthetics as well (e.g. text size, legend position, etc.)
+plot_veg_outlines(lake, lake_level_ex1, deepest, shallowest, contour_interval)
+
+# Caculate areas and percent area cover of each vegetation class
+# areas$area is veg habitat areas corresponding to given lake elevations in units L^2
+# areas$crs_units indicates what units L are (e.g., m for meters)
+# areas$pcnt is percent veg habitat areas corresponding to given lake elevations
+areas <- calculate_veg_area(lake, deepest, shallowest, contour_interval)
+
+# Extract percent area cover for closest elevation to desired lake level
+# Alternatively, could develop interpolation functions for each class using "approx".
+areas$pcnt[which.min(abs(areas$pcnt$elev - lake_level_ex2)),]
+
+# Plot areas
+# To Do: make into separate function, with on/off switch for facet grids,
+# arguments for color hex codes, text size, etc.
+plot_areas <- melt(areas$pcnt, id.vars = "elev")
+ggplot(data = plot_areas) +
+  geom_path(aes(x = value, y = elev, color = variable),
+            size = 1) +
+  facet_grid(~variable) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(limits = c(0,100),
+                     expand = c(0,0)) +
+  scale_color_manual(values = c("#B15928", "#FDBF6F", "#B2DF8A", "#33A02C", 
+                                "#1F78B4")) +
+  labs(x = "Lake Area with Suitable Habitat",
+       y = "Lake Elevation (m)",
+       color = "") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = 12),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+```
+
+```{r psnt, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+lake <- "Pleasant"
+
+# Desired resolution of areas and lake extents
+contour_interval <- 0.05
+
+# Veg classes currently hardwired to search for an "upland" (very driest) and
+# "submergent" (very wettest) class, but otherwise number and names of
+# vegetation classes can be changed as desired. Just needs to be consisistent
+# across the "deepest" and "shallowest" data frames.
+
+# Deepest limits of veg classes in feet. Assumes submergent can go to deepest
+# part of lake (but can input specific depth if desired). Here, submergent =
+# nitella and chara only
+deepest <- data.frame(upland = -1,
+                      inland_beach = 1.6,
+                      emergent = 7,
+                      floating = 10,
+                      potamogetons = 15)
+
+# Shallow limits of veg classes in feet. Assumes no limit to upland vegetation
+# (but can input specific depth if desired).
+shallowest <- data.frame(submergent = 16,
+                         floating = 5,
+                         potamogetons = 1.6,
+                         emergent = -1,
+                         inland_beach = -1.6)
+
+# Get lake level by date, exceedance probablility, or specifying
+# By date
+lake_levels <- CSLSdata::lake_levels[[lake]]
+lake_levels <- lake_levels %>%
+               filter(.data$date == as_datetime(mdy("08-07-2018")))
+lake_level_ex1  <- lake_levels$level_m
+# By exceedance probability
+lake_levels <- CSLSlevels::csls_levels
+lake_levels <- lake_levels %>%
+               filter(year(.data$date) >= 1981,
+                      year(.data$date) <= 2018) %>%
+               mutate(level = .data$level_pred)
+exceedance  <- calculate_exceedances(lake_levels, probs = 50)
+exceedance  <- exceedance %>%
+               filter(.data$lake == !!lake)
+lake_level_ex2  <- exceedance$value
+# Specify
+lake_level_ex3  <- 333
+
+# Plot veg outlines at lake level.
+# Can adjust other aesthetics as well (e.g. text size, legend position, etc.)
+plot_veg_outlines(lake, lake_level_ex1, deepest, shallowest, contour_interval)
+
+# Caculate areas and percent area cover of each vegetation class
+# areas$area is veg habitat areas corresponding to given lake elevations in units L^2
+# areas$crs_units indicates what units L are (e.g., m for meters)
+# areas$pcnt is percent veg habitat areas corresponding to given lake elevations
+areas <- calculate_veg_area(lake, deepest, shallowest, contour_interval)
+
+# Extract percent area cover for closest elevation to desired lake level
+# Alternatively, could develop interpolation functions for each class using "approx".
+areas$pcnt[which.min(abs(areas$pcnt$elev - lake_level_ex2)),]
+
+# Plot areas
+# To Do: make into separate function, with on/off switch for facet grids,
+# arguments for color hex codes, text size, etc.
+plot_areas <- melt(areas$pcnt, id.vars = "elev")
+ggplot(data = plot_areas) +
+  geom_path(aes(x = value, y = elev, color = variable),
+            size = 1) +
+  facet_grid(~variable) +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_x_continuous(limits = c(0,100),
+                     expand = c(0,0)) +
+  scale_color_manual(values = c("#B15928", "#FDBF6F", "#B2DF8A", "#33A02C", 
+                                "#1F78B4", "#6A3D9A")) +
+  labs(x = "Lake Area with Suitable Habitat",
+       y = "Lake Elevation (m)",
+       color = "") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = 12),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+```

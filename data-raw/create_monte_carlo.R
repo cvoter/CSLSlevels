@@ -30,7 +30,7 @@ devil_dates  <- csls_levels %>%
                 unique()
 rownames(devil_dates) <- NULL
 
-monte_carlo <- NULL
+mc <- list()
 for (nyears in 1:csls_max) {
   # years in months
   message(sprintf("nyears: %d", nyears))
@@ -80,8 +80,9 @@ for (nyears in 1:csls_max) {
     } else {
       devil_subset <- NULL
     }
-    monte_carlo <- rbind(monte_carlo, csls_subset, devil_subset)
+    # use nyears and sim to build a huge list from mc[[1]] to mc[[11,400]]
+    mc[[(nyears-1)*nreplicates + sim]] <- rbind(csls_subset, devil_subset)
   }
 }
-monte_carlo <- as.data.frame(monte_carlo)
+monte_carlo <- bind_rows(mc)
 use_data(monte_carlo, overwrite = TRUE, compress = 'xz')
