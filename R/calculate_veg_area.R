@@ -57,7 +57,7 @@ calculate_veg_area <- function(lake,
   }
 
   # Contours of lake levels (elevations and areas)
-  elev           <- establish_lake_extents(lake, contour_interval, min(deepest))
+  elev           <- establish_lake_extents(lake, contour_interval)
   this_raster    <- CSLSlevels::lake_raster[[lake]]
   lake_levels    <- seq(elev$min, elev$max, contour_interval)
   contours       <- rasterToContour(this_raster, levels = lake_levels)
