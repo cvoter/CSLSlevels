@@ -16,9 +16,12 @@ library(reshape2)
 library(CSLSlevels)
 library(ggplot2)
 library(extrafont)
+drop <- 10
+fig_width <- 5
+fig_height <- 5
 ```
 
-```{r pfl, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r pfl, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=fig_width, fig.height=fig_height}
 lake <- "Plainfield"
 
 # Desired resolution of areas and lake extents
@@ -45,9 +48,10 @@ shallowest <- data.frame(floating = 5,
 
 # Get lake level by date, exceedance probablility, or specifying
 # By date
-lake_levels <- CSLSdata::lake_levels[[lake]]
+lake_levels <- CSLSdata::lake_levels
 lake_levels <- lake_levels %>%
-               filter(.data$date == as_datetime(mdy("08-07-2018")))
+               filter(.data$lake == !!lake,
+                      .data$date == as_datetime(mdy("08-07-2018")))
 lake_level_ex1  <- lake_levels$level_m
 # By exceedance probability
 lake_levels <- CSLSlevels::csls_levels
@@ -55,16 +59,16 @@ lake_levels <- lake_levels %>%
                filter(year(.data$date) >= 1981,
                       year(.data$date) <= 2018) %>%
                mutate(level = .data$level_pred)
-exceedance  <- calculate_exceedances(lake_levels, probs = 50)
+exceedance  <- calculate_exceedances(lake_levels, probs = 90)
 exceedance  <- exceedance %>%
                filter(.data$lake == !!lake)
-lake_level_ex2  <- exceedance$value
+lake_level_ex2  <- exceedance$value - NISTunits::NISTftTOmeter(drop)
 # Specify
 lake_level_ex3  <- 333
 
 # Plot veg outlines at lake level.
 # Can adjust other aesthetics as well (e.g. text size, legend position, etc.)
-plot_veg_outlines(lake, lake_level_ex1, deepest, shallowest, contour_interval)
+plot_veg_outlines(lake, lake_level_ex2, deepest, shallowest, contour_interval)
 
 # Caculate areas and percent area cover of each vegetation class
 # areas$area is veg habitat areas corresponding to given lake elevations in units L^2
@@ -100,7 +104,7 @@ ggplot(data = plot_areas) +
         legend.position = "top")
 ```
 
-```{r long, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r long, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=fig_width, fig.height=fig_height}
 lake <- "Long"
 
 # Desired resolution of areas and lake extents
@@ -127,9 +131,10 @@ shallowest <- data.frame(floating = 5,
 
 # Get lake level by date, exceedance probablility, or specifying
 # By date
-lake_levels <- CSLSdata::lake_levels[[lake]]
+lake_levels <- CSLSdata::lake_levels
 lake_levels <- lake_levels %>%
-               filter(.data$date == as_datetime(mdy("08-07-2018")))
+               filter(.data$lake == !!lake,
+                      .data$date == as_datetime(mdy("08-07-2018")))
 lake_level_ex1  <- lake_levels$level_m
 # By exceedance probability
 lake_levels <- CSLSlevels::csls_levels
@@ -137,16 +142,16 @@ lake_levels <- lake_levels %>%
                filter(year(.data$date) >= 1981,
                       year(.data$date) <= 2018) %>%
                mutate(level = .data$level_pred)
-exceedance  <- calculate_exceedances(lake_levels, probs = 50)
+exceedance  <- calculate_exceedances(lake_levels, probs = 90)
 exceedance  <- exceedance %>%
                filter(.data$lake == !!lake)
-lake_level_ex2  <- exceedance$value
+lake_level_ex2  <- exceedance$value  - NISTunits::NISTftTOmeter(drop)
 # Specify
 lake_level_ex3  <- 333
 
 # Plot veg outlines at lake level.
 # Can adjust other aesthetics as well (e.g. text size, legend position, etc.)
-plot_veg_outlines(lake, lake_level_ex1, deepest, shallowest, contour_interval)
+plot_veg_outlines(lake, lake_level_ex2, deepest, shallowest, contour_interval)
 
 # Caculate areas and percent area cover of each vegetation class
 # areas$area is veg habitat areas corresponding to given lake elevations in units L^2
@@ -182,7 +187,7 @@ ggplot(data = plot_areas) +
         legend.position = "top")
 ```
 
-```{r psnt, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r psnt, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=fig_width, fig.height=fig_height}
 lake <- "Pleasant"
 
 # Desired resolution of areas and lake extents
@@ -212,9 +217,10 @@ shallowest <- data.frame(submergent = 16,
 
 # Get lake level by date, exceedance probablility, or specifying
 # By date
-lake_levels <- CSLSdata::lake_levels[[lake]]
+lake_levels <- CSLSdata::lake_levels
 lake_levels <- lake_levels %>%
-               filter(.data$date == as_datetime(mdy("08-07-2018")))
+               filter(.data$lake == !!lake,
+                      .data$date == as_datetime(mdy("08-07-2018")))
 lake_level_ex1  <- lake_levels$level_m
 # By exceedance probability
 lake_levels <- CSLSlevels::csls_levels
@@ -222,16 +228,18 @@ lake_levels <- lake_levels %>%
                filter(year(.data$date) >= 1981,
                       year(.data$date) <= 2018) %>%
                mutate(level = .data$level_pred)
-exceedance  <- calculate_exceedances(lake_levels, probs = 50)
+exceedance  <- calculate_exceedances(lake_levels, probs = 90)
 exceedance  <- exceedance %>%
                filter(.data$lake == !!lake)
-lake_level_ex2  <- exceedance$value
+lake_level_ex2  <- exceedance$value  - NISTunits::NISTftTOmeter(drop)
 # Specify
 lake_level_ex3  <- 333
 
 # Plot veg outlines at lake level.
 # Can adjust other aesthetics as well (e.g. text size, legend position, etc.)
-plot_veg_outlines(lake, lake_level_ex1, deepest, shallowest, contour_interval)
+plot_veg_outlines(lake, lake_level_ex2, deepest, shallowest, contour_interval, 
+                  color_values = c("#B15928", "#FDBF6F", "#B2DF8A", "#33A02C", 
+                                   "#1F78B4", "#6A3D9A", "#CAB2D6"))
 
 # Caculate areas and percent area cover of each vegetation class
 # areas$area is veg habitat areas corresponding to given lake elevations in units L^2
@@ -255,7 +263,7 @@ ggplot(data = plot_areas) +
   scale_x_continuous(limits = c(0,100),
                      expand = c(0,0)) +
   scale_color_manual(values = c("#B15928", "#FDBF6F", "#B2DF8A", "#33A02C", 
-                                "#1F78B4", "#6A3D9A")) +
+                                "#1F78B4", "#6A3D9A", "#CAB2D6")) +
   labs(x = "Lake Area with Suitable Habitat",
        y = "Lake Elevation (m)",
        color = "") +
