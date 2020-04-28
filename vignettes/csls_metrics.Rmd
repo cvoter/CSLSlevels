@@ -21,7 +21,9 @@ library(NISTunits)
 library(stringr)
 library(reshape2)
 
-text_size       <- 12
+text_size       <- 20
+fig_width       <- 12 # 6.5
+fig_height      <- 4 # 3
 lakes           <- c("Pleasant", "Long", "Plainfield")
 csls_levels     <- CSLSlevels::csls_levels
 csls_levels_all <- csls_levels %>%
@@ -156,9 +158,9 @@ levels were created for each lake from 1900 to 2020 representing the most likely
 water level given existing observations and the historical variability in
 precipitation (Figure 2).
 
-```{r levels01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 2.** Estimated lake levels for each lake (lines) with observations (points) from 1905-2018."}
+```{r levels01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=fig_height, fig.cap="**Figure 2.** Estimated lake levels for each lake (lines) with observations (points) from 1905-2018."}
 plot_levels(csls_levels_all, point_size = 1, convert_units = "meterTOft",
-            legend_pos = c(0.1, 0.9), grid_off = FALSE)
+            legend_pos = c(0.1, 0.9), grid_off = FALSE, text_size = text_size)
 ```
 
 <br>
@@ -190,9 +192,9 @@ undisturbed lake levels. Furthermore, lake observations begin ~1940 and are more
 prevalent post-2000, lending greater certainty to lake level predictions in the
 more recent record.
 
-```{r levels02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3, fig.cap="**Figure 3.** Estimated lake levels for each lake (lines) with observations (points) from 1981-2018."}
+```{r levels02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=fig_height, fig.cap="**Figure 3.** Estimated lake levels for each lake (lines) with observations (points) from 1981-2018."}
 plot_levels(csls_levels, point_size = 1, convert_units = "meterTOft",
-            legend_pos = c(0.1, 0.9), grid_off = FALSE)
+            legend_pos = c(0.1, 0.9), grid_off = FALSE, text_size = text_size)
 ```
 
 <br>
@@ -217,7 +219,7 @@ most variable water levels, followed by Plainfield Lake, and finally Pleasant
 Lake.
 
 ```{r magnitude_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=5, fig.cap="**Figure 4.** Range in lake elevations (ft) for entire timeseries (“Overall”) as well as each month for each study lake. All y-axes cover the same range so differences in lake elevation are comparable across plots."}
-plot_magnitude(csls_levels)
+plot_magnitude(csls_levels, text_size = text_size)
 ```
 
 <br>
@@ -274,13 +276,14 @@ levels at Long and Plainfield Lakes are more variable than at Pleasant Lake.
 Both lakes, but particularly Long Lake, experience extremes (both high and low
 levels) more regularly than Pleasant Lake does.
 
-```{r frequency, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3.5, fig.cap="**Figure 5.** Distribution of lake elevations (ft) with 10%, 50%, and 90% exceedance probabilities noted. All x-axes cover the same range so differences in lake elevation are comparable across plots."}
-plot_frequency(csls_levels, probs = c(10, 50, 90))
+```{r frequency, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=fig_height, fig.cap="**Figure 5.** Distribution of lake elevations (ft) with 10%, 50%, and 90% exceedance probabilities noted. All x-axes cover the same range so differences in lake elevation are comparable across plots."}
+plot_frequency(csls_levels, probs = c(10, 50, 90), text_size = text_size)
+plot_frequency(csls_levels, probs = NULL, text_size = text_size)
 ```
 
 <br>
 
-```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=2*fig_height}
 metric_name     <- "exceedance_level"
 metric_title    <- "**Exceedance Probability Lake Levels (ft)**"
 variable_breaks <- "sort"
@@ -317,16 +320,32 @@ of a period of high or low water levels at these lakes is “typical” and it m
 be more useful to evaluate changes in duration exclusively in terms of whether
 they may lead to substantial differences in ecological factors.
 
-```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5, fig.cap="**Figure 6.** Distribution of durations above the 10% exceedance probability level and below the 90% exceedance probability level for all lakes, using the complete 1905-2018 timeseries, with the median duration noted."}
+```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=5, fig.cap="**Figure 6.** Distribution of durations above the 10% exceedance probability level and below the 90% exceedance probability level for all lakes, using the complete 1905-2018 timeseries, with the median duration noted."}
 plot_duration(csls_levels_all, 
               probs = c(10, 90), 
               show_median = TRUE, 
-              bin_size = 2)
+              bin_size = 2, 
+              text_size = text_size)
 plot_duration(csls_levels_all, 
               probs = c(10, 90), 
               show_median = TRUE, 
               bin_size = 1,
-              max_months = 20)
+              max_months = 20, 
+              text_size = text_size)
+
+```
+
+```{r duration02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=fig_height, fig.cap="**Figure 6.** Distribution of durations above the 10% exceedance probability level and below the 90% exceedance probability level for all lakes, using the complete 1905-2018 timeseries, with the median duration noted."}
+plot_duration(csls_levels_all, 
+              probs = 90, 
+              show_median = TRUE, 
+              bin_size = 2, 
+              text_size = text_size)
+plot_duration(csls_levels_all, 
+              probs = 90, 
+              show_median = FALSE, 
+              bin_size = 2, 
+              text_size = text_size)
 
 ```
 
@@ -372,8 +391,13 @@ are only substantial when evaluated over a 12 month period. Long Lake can vary
 by as much as 2 ft over a 12 month period, while Plainfield Lake generally
 varies by 1.5 ft or less, and Pleasant Lake rarely varies by more than 1 ft.
 
-```{r rate_of_change, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=7, fig.cap="**Figure 7.** Distribution of rates of change for lake levels over 1 month, 3 months, and 12 months with median fall rate and median rise rate noted with vertical lines."}
-plot_rate_change(csls_levels)
+```{r rate_of_change, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=7, fig.cap="**Figure 7.** Distribution of rates of change for lake levels over 1 month, 3 months, and 12 months with median fall rate and median rise rate noted with vertical lines."}
+plot_rate_change(csls_levels, text_size = text_size)
+```
+
+```{r rate_of_change02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=fig_width, fig.height=fig_height, fig.cap="**Figure 7.** Distribution of rates of change for lake levels over 1 month, 3 months, and 12 months with median fall rate and median rise rate noted with vertical lines."}
+plot_rate_change(csls_levels, lag_months = 3, text_size = text_size)
+plot_rate_change(csls_levels, lag_months = 3, text_size = text_size, show_median = FALSE)
 ```
 
 <br>
@@ -456,7 +480,38 @@ equate to an evaluation of “average lake levels”.
 plot_df <- csls_metrics %>%
            filter(.data$metric == "exceedance_range") %>%
            mutate(time = str_sub(.data$variable, 1, 1),
-                  range = str_sub(.data$variable, 3, -1)) %>%
+                  range = str_sub(.data$variable, 3, -1),
+                  value = NISTunits::NISTmeterTOft(.data$value)) %>%
+           mutate(range = str_replace(.data$range, "10_90", "10%-90%")) %>%
+           mutate(range = str_replace(.data$range, "25_75", "25%-75%")) %>%
+           filter(.data$range != "25%-75%") %>%
+           select(.data$lake, .data$time, .data$range, .data$value)
+plot_df <- dcast(plot_df, lake+range~time, value.var = "value")
+
+
+ggplot(plot_df) +
+  geom_point(aes(x = a, y = m, shape = lake), 
+             color = "black",
+             size = 2) +
+  geom_abline(slope = 1, intercept = 0) +
+  labs(x = "Annual Range (ft)",
+       y = "Monthly Range (ft)",
+       shape = "") +
+  theme_bw() +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = text_size),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top")
+```
+
+```{r timing02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=4, fig.cap="**Figure 8.** Comparison between the range in lake levels between the 10% and 90% exceedance probabilities and the 25% and 75% exceedance probabilities as calculated using monthly lake level data vs. mean annual lake level data. 1:1 relationship denoted with solid black line."}
+plot_df <- csls_metrics %>%
+           filter(.data$metric == "exceedance_range") %>%
+           mutate(time = str_sub(.data$variable, 1, 1),
+                  range = str_sub(.data$variable, 3, -1),
+                  value = NISTunits::NISTmeterTOft(.data$value)) %>%
            mutate(range = str_replace(.data$range, "10_90", "10%-90%")) %>%
            mutate(range = str_replace(.data$range, "25_75", "25%-75%")) %>%
            filter(.data$range != "25%-75%") %>%

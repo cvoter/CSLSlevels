@@ -47,7 +47,9 @@ plot_lake_depths <- function(lake,
   lake_raster    <- CSLSlevels::lake_raster[[lake]]
   raster_summary <- summary(lake_raster)
   min_elev       <- round(minValue(lake_raster), 2)
-  lake_levels    <- CSLSdata::lake_levels[[lake]]$level_m
+  lake_levels    <- CSLSdata::lake_levels
+  lake_levels    <- filter(lake_levels, .data$lake == !!lake)
+  lake_levels    <- lake_levels$level_m
   max_elev       <- round(max(lake_levels, na.rm = TRUE), 2)
   max_depth      <- round(max_elev - min_elev, 2)
   lake_levels    <- seq(lake_level, min_elev, -0.1)
