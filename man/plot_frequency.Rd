@@ -16,7 +16,8 @@ plot_frequency(
   density_color = "#c00000",
   line_size = 1,
   pfl_is_long = TRUE,
-  labels = TRUE
+  labels = TRUE,
+  lakes = c("Pleasant", "Long", "Plainfield")
 )
 }
 \arguments{
@@ -50,6 +51,9 @@ red ("#c00000")}
 to the same as long lake.}
 
 \item{labels}{logical defaults to TRUE to label exceedance probabilities (if displayed)}
+
+\item{lakes}{vector of lakes to include in plot. Defaults to c("Pleasant",
+"Long", "Plainfield")}
 }
 \value{
 plot_obj, a plot with the distribution(s) of estimated lake elevation

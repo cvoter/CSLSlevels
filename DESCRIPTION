@@ -27,7 +27,8 @@ Imports:
     reshape2,
     scales,
     NISTunits,
-    ggrepel
+    ggrepel,
+    bsts
 Suggests:
     knitr,
     rmarkdown,
@@ -38,5 +39,5 @@ Suggests:
     patchwork,
     RColorBrewer
 VignetteBuilder: knitr
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)

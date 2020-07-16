@@ -21,6 +21,8 @@
 #'                      red ("#c00000")
 #' @param line_size line size, defaults to 1
 #' @param bin_size width of bins, defaults to 2 months.
+#' @param lakes vector of lakes to include in plot. Defaults to c("Pleasant",
+#'              "Long", "Plainfield")
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
@@ -41,9 +43,11 @@ plot_duration <- function(df,
                           hist_color = "grey80",
                           density_color = "#c00000",
                           line_size = 1,
-                          bin_size = 2) {
+                          bin_size = 2,
+                          lakes = c("Pleasant", "Long", "Plainfield")) {
 
-  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
+  df <- df %>% filter(.data$lake %in% lakes)
+
   durations <- calculate_durations(df, probs)
   durations$variable <- factor(durations$variable,
                                levels = levels(durations$variable),

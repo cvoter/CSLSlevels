@@ -5,7 +5,9 @@
 #' multiple lakes, will display as facet plots. Options to add xintercepts.
 #'
 #'
-#' @param df a data frame with columns for "lake", "date", and "level_pred".
+#' @param df a data frame with columns for "lake", "date", and "level".
+#' @param lakes vector of lakes to include in plot. Defaults to c("Pleasant",
+#'              "Long", "Plainfield")
 #' @param convert_to_ft defaults to TRUE to convert lake levels from meters to ft
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
@@ -20,12 +22,14 @@
 #'
 #' @export
 plot_magnitude <- function(df,
+                           lakes = c("Pleasant", "Long", "Plainfield"),
                            convert_to_ft = TRUE,
                            title = "",
                            text_size = 12,
                            pfl_is_long = TRUE) {
 
-  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
+  df <- df %>% filter(.data$lake %in% lakes)
+
   df$month <- month(df$date)
   df_all   <- df
   df_all$month <- 0

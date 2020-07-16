@@ -8,7 +8,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r setup, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 library(CSLSlevels)
 library(dplyr)
 library(reshape2)
@@ -56,7 +56,7 @@ While bias is consistently low (PBIAS), precision (CV) and accuracy (RMSE)
 worsen between lengths of ~45 years to ~60 years before beginning to improve
 again.
 
-```{r long_sensitivity, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r long_sensitivity, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 monte_carlo_fit <- calculate_fit(monte_carlo_metrics)
 monte_carlo_fit <- monte_carlo_fit %>%
                    mutate(value = ifelse(.data$metric %in% 
@@ -87,7 +87,7 @@ start date of the moving window for a few representative timeseries lengths: 45
 years, 50 years, 55 years, and 60 years. The dashed line represents the "true"
 long-term median lake level.
 
-```{r moving_windows, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
+```{r moving_windows, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
 metric   <- "median_level"
 variable <- "0"
 lake     <- "Long"
@@ -135,7 +135,7 @@ Ok, now let's pick two representative starting years and look more closely at
 why a 60-year timeseries from 1920-1979 is so far below the "true" median and
 why a 60-year timeseries from 1939-1998 is so far above the "true" median.
 
-```{r moving_windows02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
+```{r moving_windows02, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
 
 long_1920 <- csls_levels %>%
              filter(.data$lake == "Long",

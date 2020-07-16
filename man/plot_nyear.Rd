@@ -31,7 +31,7 @@ plot_nyear(
 \item{metric}{name of hydrologic metrics, e.g. median_level, cv_rise_rate}
 \item{variable}{name of variation on metrics, e.g. 10 for 10\% exceedance
 level}
-\item{value}{value from this iteration}
+\item{sim}{value from this iteration}
 \item{nsim}{id of this iteration}
 }}
 

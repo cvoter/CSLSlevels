@@ -9,9 +9,10 @@ plot_levels(
   lakes = c("Pleasant", "Long", "Plainfield"),
   yintercept = NULL,
   probs = NULL,
-  depth_axis = TRUE,
+  all_probs = FALSE,
   title = "",
   legend_pos = c(0.1, 0.95),
+  show_obs_type = FALSE,
   text_size = 12,
   color_vals = c("grey70", "black"),
   hline_color = "#c00000",
@@ -20,15 +21,16 @@ plot_levels(
   npretty_breaks = NULL,
   force_pfl = TRUE,
   convert_units = "",
-  grid_off = TRUE
+  grid_off = TRUE,
+  show_uncertainty = FALSE
 )
 }
 \arguments{
 \item{df}{a data frame with columns for "lake", "date", "level_obs", and
-"level_pred".}
+"level".}
 
-\item{lakes}{names of lakes in df in order to display. Defaults to
-c("Pleasant", "Long", "Plainfield")}
+\item{lakes}{vector of lakes to include in plot. Defaults to c("Pleasant",
+"Long", "Plainfield")}
 
 \item{yintercept}{either a single value (if only one lake) or a data frame
 with two columns: "yintercept" with the values, and "lake"
@@ -38,13 +40,20 @@ add a line.}
 \item{probs}{exceedance probability (e.g., 10 for 10\%) to identify with
 a horizontal line}
 
-\item{depth_axis}{logical defaults to TRUE to add a second axis with lake
-depth if there's only one lake in the df}
+\item{all_probs}{logical defaults to FALSE. If true, adds rectangle
+representing 10-90 percentiles with solid line at 50th
+percentile.}
 
 \item{title}{string to use for title of plot, defaults to "".}
 
 \item{legend_pos}{position of legend. Defaults to c(0.15, 0.95) but can also
 be "top", "right", etc.}
+
+\item{show_obs_type}{logical defaults to FALSE to show observations as
+black points. If TRUE, uses different colors and shapes
+to indicate different types of observations. If true,
+suggest setting color_vals to c("grey70", "#1B9E77",
+"#7570B3", "#D95F02").}
 
 \item{text_size}{size of text, defaults to 12}
 
@@ -58,15 +67,20 @@ be "top", "right", etc.}
 \item{point_size}{point size, defaults to 3}
 
 \item{npretty_breaks}{defaults to NULL, set to 3 to limit Long, Plainfield,
-and Pleasant to integers (or play around, may be different with different
-periods of record)}
+and Pleasant to integers (or play around, may be
+different with different periods of record)}
 
-\item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
+\item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to
+the same as long lake.}
 
-\item{convert_units}{logical defulats to "". If "metersTOft", converts values
+\item{convert_units}{logical defaults to "". If "meterTOft", converts values
 from meters to feet.}
 
 \item{grid_off}{defaults to TRUE to turn off gridlines.}
+
+\item{show_uncertainty}{defaults to FALSE. If TRUE, shows dark grey ribbon
+representing mean +/- one standard deviation and a light grey ribbon
+representing mean +/- two standard deviations.}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.

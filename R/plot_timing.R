@@ -7,7 +7,7 @@
 #'
 #'
 #' @param df a data frame with columns for "lake", "date", "level_obs", and
-#'   "level_pred".
+#'   "level".
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
 #' @param npretty_breaks defaults to NULL, set to 3 to limit Long, Plainfield,
@@ -35,15 +35,15 @@ plot_timing <- function(df,
   # Basic plot w/lines for estimate, points for observations
   plot_obj <- ggplot(data = df) +
               geom_boxplot(aes(x = .data$month,
-                               y = .data$level_pred,
+                               y = .data$level,
                                group = as.factor(.data$month)))
 
   # If more than one lake, use facets
   if (length(unique(df$lake)) > 1) {
     range     <- df %>%
                  group_by(.data$lake) %>%
-                 summarize(lower = min(.data$level_pred),
-                           upper = max(.data$level_pred)) %>%
+                 summarize(lower = min(.data$level),
+                           upper = max(.data$level)) %>%
                  mutate(midpoint = .data$lower + (.data$upper -.data$lower)/2) %>%
                  ungroup() %>%
                  mutate(range = .data$upper - .data$lower)
