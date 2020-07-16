@@ -9,7 +9,7 @@
 #'   \item{metric}{name of hydrologic metrics, e.g. median_level, cv_rise_rate}
 #'   \item{variable}{name of variation on metrics, e.g. 10 for 10% exceedance
 #'                   level}
-#'   \item{value}{value from this iteration}
+#'   \item{sim}{value from this iteration}
 #'   \item{nsim}{id of this iteration}
 #' }
 #' @param df_point data frame with the following columns for the entire timeseries:
@@ -61,22 +61,22 @@
 #' @export
 
 plot_nyear <- function(df_box,
-                             df_point,
-                             df_point_short = NULL,
-                             metric_name,
-                             metric_title = "",
-                             variable_title = "",
-                             variable_breaks = "sort",
-                             variable_labels,
-                             value_title = "",
-                             convert_units = "",
-                             point_color = "#c00000",
-                             point_size = 2,
-                             text_size = 12,
-                             same_range = TRUE,
-                             ytick_precision = 0.5,
-                             rotate_xticks = FALSE,
-                             pfl_is_long = FALSE) {
+                       df_point,
+                       df_point_short = NULL,
+                       metric_name,
+                       metric_title = "",
+                       variable_title = "",
+                       variable_breaks = "sort",
+                       variable_labels,
+                       value_title = "",
+                       convert_units = "",
+                       point_color = "#c00000",
+                       point_size = 2,
+                       text_size = 12,
+                       same_range = TRUE,
+                       ytick_precision = 0.5,
+                       rotate_xticks = FALSE,
+                       pfl_is_long = FALSE) {
   df_box   <- df_box %>%
               filter(.data$metric == metric_name)
   df_point <- df_point %>%
@@ -107,14 +107,14 @@ plot_nyear <- function(df_box,
   }
 
   if (convert_units == "meterTOft") {
-    df_box$value <- NISTmeterTOft(df_box$value)
+    df_box$sim <- NISTmeterTOft(df_box$sim)
     df_point$value <- NISTmeterTOft(df_point$value)
   }
 
   plot_obj <- ggplot() +
               geom_boxplot(data = df_box,
                            aes(x = .data$variable,
-                               y = .data$value)) +
+                               y = .data$sim)) +
               geom_point(data = df_point,
                            aes(x = .data$variable,
                                y = .data$value),
@@ -134,13 +134,13 @@ plot_nyear <- function(df_box,
   }
 
   if (same_range) {
-    range <- specify_range(df_box, "lake", "value", ytick_precision, pfl_is_long)
+    range <- specify_range(df_box, "lake", "sim", ytick_precision, pfl_is_long)
     plot_obj <- plot_obj +
                 facet_wrap(~lake,
                            scales = "free_y") +
                 geom_blank(data = range,
                            aes(x = unique(df_box$variable)[1],
-                               y = .data$value))
+                               y = .data$sim))
   } else {
     plot_obj <- plot_obj +
                 facet_wrap(~lake)

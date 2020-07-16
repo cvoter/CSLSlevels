@@ -22,6 +22,8 @@
 #' @param density_color color of density curve with alpha = 0.2, defaults to a
 #'                      red ("#c00000")
 #' @param line_size line size, defaults to 1
+#' @param lakes vector of lakes to include in plot. Defaults to c("Pleasant",
+#'              "Long", "Plainfield")
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
@@ -46,12 +48,14 @@ plot_rate_change <- function(df,
                              vline_color = "#c00000",
                              hist_color = "grey80",
                              density_color = "#c00000",
-                             line_size = 1) {
+                             line_size = 1,
+                             lakes = c("Pleasant", "Long", "Plainfield")) {
+
+  # Filter to desired lakes
+  df <- df %>% filter(.data$lake %in% lakes)
 
   median_rates <- calculate_metrics(df, metrics = c("median_rise_rate",
                                                     "median_fall_rate"))
-
-  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
 
   if (convert_to_ft) {
     df$level <- NISTmeterTOft(df$level)
@@ -118,14 +122,14 @@ plot_rate_change <- function(df,
       plot_obj <- plot_obj +
                   geom_text(data = filter(median_rates, .data$value > 0),
                             aes(x = .data$value,
-                                y = 2,
+                                y = 1,
                                 label = .data$value),
                             hjust = 0,
                             nudge_x = 0.1,
                             family = "Segoe UI Semibold") +
                   geom_text(data = filter(median_rates, .data$value < 0),
                             aes(x = .data$value,
-                                y = 2,
+                                y = 1,
                                 label = .data$value),
                             hjust = 1,
                             nudge_x = -0.1,

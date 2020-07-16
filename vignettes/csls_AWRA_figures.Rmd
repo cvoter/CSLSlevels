@@ -9,7 +9,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+```{r setup, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 library(CSLSlevels)
 library(lubridate)
 library(dplyr)
@@ -27,7 +27,7 @@ csls_levels     <- csls_levels_all %>%
 text_size <- 24
 ```
 
-```{r plots, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
+```{r plots, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=5}
 p1 <- plot_levels(csls_levels_all, text_size = text_size)
 p2 <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3)
 p2a <- plot_levels(csls_levels, text_size = text_size, npretty_breaks = 3, probs = 90)

@@ -26,8 +26,8 @@
 #'                       month, 3 months (seasonal), and 12 months (annual).
 #'
 #' @param df data frame to use, defaults "CSLSlevels::csls_levels". Must include
-#'           columns for "date", "lake", and one with the lake levels (named in
-#'           "col_name" argument).
+#'           columns for "date" (must be POSIXct), "lake" (must be factor), and
+#'           one with the lake levels (named in "col_name" argument).
 #' @param col_name name of column with lake level values to use. Defaults to
 #'                 "level_pred".
 #' @param metrics a list of which metrics to use. Defaults to all of them

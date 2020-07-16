@@ -14,8 +14,8 @@ calculate_metrics(
 }
 \arguments{
 \item{df}{data frame to use, defaults "CSLSlevels::csls_levels". Must include
-columns for "date", "lake", and one with the lake levels (named in
-"col_name" argument).}
+columns for "date" (must be POSIXct), "lake" (must be factor), and
+one with the lake levels (named in "col_name" argument).}
 
 \item{col_name}{name of column with lake level values to use. Defaults to
 "level_pred".}

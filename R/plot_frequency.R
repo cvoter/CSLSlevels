@@ -7,6 +7,8 @@
 #'
 #' @param df a data frame with columns for "lake", "date", "level_obs", and
 #'           "level_pred".
+#' @param lakes vector of lakes to include in plot. Defaults to c("Pleasant",
+#'              "Long", "Plainfield")
 #' @param convert_to_ft defaults to TRUE to convert lake levels from meters to ft
 #' @param xintercept either a single value (if only one lake) or a data frame
 #'                   with two columns: "xintercept" with the values, and "lake"
@@ -45,9 +47,10 @@ plot_frequency <- function(df,
                            density_color = "#c00000",
                            line_size = 1,
                            pfl_is_long = TRUE,
-                           labels = TRUE) {
+                           labels = TRUE,
+                           lakes = c("Pleasant", "Long", "Plainfield")) {
 
-  colnames(df)[which(colnames(df) == "level_pred")] <- "level"
+  df <- df %>% filter(.data$lake %in% lakes)
 
   # Convert to ft, if desired
   if (convert_to_ft) {

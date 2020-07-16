@@ -14,7 +14,7 @@ plot_timing(
 }
 \arguments{
 \item{df}{a data frame with columns for "lake", "date", "level_obs", and
-"level_pred".}
+"level".}
 
 \item{title}{string to use for title of plot, defaults to "".}
 

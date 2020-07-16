@@ -6,6 +6,7 @@
 \usage{
 plot_magnitude(
   df,
+  lakes = c("Pleasant", "Long", "Plainfield"),
   convert_to_ft = TRUE,
   title = "",
   text_size = 12,
@@ -13,7 +14,10 @@ plot_magnitude(
 )
 }
 \arguments{
-\item{df}{a data frame with columns for "lake", "date", and "level_pred".}
+\item{df}{a data frame with columns for "lake", "date", and "level".}
+
+\item{lakes}{vector of lakes to include in plot. Defaults to c("Pleasant",
+"Long", "Plainfield")}
 
 \item{convert_to_ft}{defaults to TRUE to convert lake levels from meters to ft}
 

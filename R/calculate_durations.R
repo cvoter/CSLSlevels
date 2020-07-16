@@ -33,9 +33,9 @@ calculate_durations <- function(df, probs = c(10, 25, 75, 90)) {
     for (prob in probs) {
       prob_name <- sprintf("%d", prob)
       if (prob <= 50) {
-        flags <- ifelse(this_lake$level > this_lake[,prob_name], 1, 0)
+        flags <- ifelse(this_lake$level >= this_lake[,prob_name], 1, 0)
       } else {
-        flags <- ifelse(this_lake$level < this_lake[,prob_name], 1, 0)
+        flags <- ifelse(this_lake$level <= this_lake[,prob_name], 1, 0)
       }
       duration  <- data.frame(lake = lake,
                               variable = prob_name,
