@@ -4,7 +4,12 @@
 \alias{calculate_exceedances}
 \title{Calculate exceedance levels}
 \usage{
-calculate_exceedances(df, probs = c(10, 25, 50, 75, 90), melted = TRUE)
+calculate_exceedances(
+  df,
+  probs = c(10, 25, 50, 75, 90),
+  departures = NULL,
+  melted = TRUE
+)
 }
 \arguments{
 \item{df}{a data frame with a "lake" and a "level" column}

@@ -4,6 +4,7 @@ library(tidyverse)
 library(lubridate)
 library(usethis)
 library(CSLSlevels)
+library(NISTunits)
 
 # PARAMETERS: Lakes of interest
 lakes <- c("Pleasant", "Long", "Plainfield", "Devils")
@@ -81,6 +82,15 @@ hist_levels       <- levels_bsts %>%
                             .data$airphoto_obs)
 
 # CALCULATIONS 2/2: Calculate hydrologic metrics for each sim for each lake ----
+# Convert levels to max depths for fairer CV calcs
+lake_bottom <- data.frame(lake = lakes,
+                          bottom = c(291.1426, 332.8622, 332.0755,
+                                     NISTftTOmeter(964-47)))
+levels_bsts <- left_join(levels_bsts, lake_bottom, by = "lake") %>%
+                         mutate(level = .data$level - .data$bottom)
+levels_bsts$bottom <- NULL
+levels_bsts$lake   <- factor(levels_bsts$lake, levels = lakes)
+
 hist_metrics_long  <- NULL
 hist_metrics_short <- NULL
 for (sim in unique(levels_bsts$sim)) {
@@ -92,7 +102,7 @@ for (sim in unique(levels_bsts$sim)) {
                   filter(.data$sim == !!sim) %>%
                   select(lake = .data$lake,
                          date = .data$date,
-                         level_pred = .data$level)
+                         level = .data$level)
   this_sim     <- calculate_metrics(this_rank)
   this_sim$sim <- sim
   hist_metrics_long[[sim]] <- this_sim
@@ -107,6 +117,19 @@ for (sim in unique(levels_bsts$sim)) {
 }
 hist_metrics_long  <- bind_rows(hist_metrics_long)
 hist_metrics_short <- bind_rows(hist_metrics_short)
+
+# Convert level metrics back from depths
+level_metrics     <- c("median_level", "exceedance_level")
+hist_metrics_long <- left_join(hist_metrics_long, lake_bottom) %>%
+                     mutate(value = ifelse(.data$metric %in% level_metrics,
+                                         .data$value + .data$bottom, .data$value))
+hist_metrics_long$bottom <- NULL
+hist_metrics_long$lake   <- factor(hist_metrics_long$lake, levels = lakes)
+hist_metrics_short <- left_join(hist_metrics_short, lake_bottom) %>%
+                      mutate(value = ifelse(.data$metric %in% level_metrics,
+                                          .data$value + .data$bottom, .data$value))
+hist_metrics_short$bottom <- NULL
+hist_metrics_short$lake   <- factor(hist_metrics_short$lake, levels = lakes)
 
 # SAVE: Write out
 # usethis::use_data(levels_bsts, overwrite = TRUE, compress = "xz")

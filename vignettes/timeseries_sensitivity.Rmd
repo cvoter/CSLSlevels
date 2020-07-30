@@ -18,6 +18,7 @@ library(RColorBrewer)
 library(extrafont)
 library(lubridate)
 library(NISTunits)
+library(patchwork)
 
 # Parameters
 csls_lakes      <- c("Pleasant", "Long", "Plainfield")
@@ -25,16 +26,18 @@ convert_to_ft   <- TRUE
 text_size       <- 12
 
 # Data
-hist_levels     <- CSLSlevels::hist_levels
-lake_bottom     <- data.frame(lake = c(csls_lakes, "Devils"),
-                              bottom = c(291.1426, 332.8622, 332.0755,
-                                         NISTftTOmeter(964-47)))
-hist_levels      <- left_join(hist_levels, lake_bottom, by = "lake") %>%
-                    mutate(depth = .data$level - .data$bottom) %>%
-                    select(lake = .data$lake,
-                           date = .data$date,
-                           level = .data$depth)
-hist_levels$lake <- factor(hist_levels$lake, levels = c(csls_lakes, "Devils"))
+hist_metrics_short <- CSLSlevels::hist_metrics_short %>%
+                      filter(.data$lake != "Devils") %>%
+                      group_by(.data$lake, .data$metric, .data$variable) %>%
+                      summarise(median = median(.data$value),
+                                sd = sd(.data$value)) %>%
+                      ungroup()
+hist_metrics_long  <- CSLSlevels::hist_metrics_long %>%
+                      filter(.data$lake != "Devils") %>%
+                      group_by(.data$lake, .data$metric, .data$variable) %>%
+                      summarise(median = median(.data$value),
+                                sd = sd(.data$value)) %>%
+                      ungroup()
 
 ts_summary       <- CSLSlevels::ts_summary
 ts_metrics_short <- CSLSlevels::ts_metrics_short
@@ -53,46 +56,17 @@ if (convert_to_ft) {
                                             NISTmeterTOft(.data$sim), .data$sim),
                              obs = ifelse(.data$metric %in% length_metrics,
                                             NISTmeterTOft(.data$obs), .data$obs))
-  hist_levels      <- hist_levels %>%
-                      mutate(level = NISTmeterTOft(.data$level))
-  lake_bottom      <- lake_bottom %>%
-                      mutate(bottom = NISTmeterTOft(.data$bottom))
+  hist_metrics_long <- hist_metrics_long %>%
+                       mutate(median = ifelse(.data$metric %in% length_metrics,
+                                              NISTmeterTOft(.data$median), .data$median),
+                              sd = ifelse(.data$metric %in% length_metrics,
+                                          NISTmeterTOft(.data$sd), .data$sd))
+  hist_metrics_short <- hist_metrics_short %>%
+                        mutate(median = ifelse(.data$metric %in% length_metrics,
+                                               NISTmeterTOft(.data$median), .data$median),
+                               sd = ifelse(.data$metric %in% length_metrics,
+                                           NISTmeterTOft(.data$sd), .data$sd))
 }
-```
-
-```{r benchmarks, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
-hist_levels_short  <- hist_levels %>% 
-                      filter(year(.data$date) >= 1981,
-                             year(.data$date) <= 2018)
-hist_metrics_long  <- calculate_metrics(hist_levels)
-hist_metrics_short <- calculate_metrics(hist_levels_short)
-
-level_metrics   <- c("median_level", "exceedance_level")
-hist_metrics_long <- left_join(hist_metrics_long, lake_bottom) %>%
-                     mutate(value = ifelse(.data$metric %in% level_metrics,
-                                        .data$value + .data$bottom, .data$value))
-hist_metrics_long$bottom <- NULL
-hist_metrics_long$lake   <- factor(hist_metrics_long$lake,
-                                  levels = c(csls_lakes, "Devils"))
-hist_metrics_short <- left_join(hist_metrics_short, lake_bottom) %>%
-                    mutate(value = ifelse(.data$metric %in% level_metrics,
-                                        .data$value + .data$bottom, .data$value))
-hist_metrics_short$bottom <- NULL
-hist_metrics_short$lake   <- factor(hist_metrics_short$lake,
-                                  levels = c(csls_lakes, "Devils"))
-
-hist_metrics_diff  <- full_join(hist_metrics_long, hist_metrics_short,
-                                by = c("lake", "metric", "variable")) %>%
-                      mutate(delta_1981 = .data$value.x - .data$value.y)
-hist_metrics_diff  <- ts_metrics_short %>%
-                      group_by(.data$lake, .data$metric, .data$variable) %>%
-                      summarise(value = median(.data$sim, na.rm = TRUE)) %>%
-                      ungroup() %>%
-                      full_join(hist_metrics_diff,
-                                by = c("lake", "metric", "variable")) %>%
-                      mutate(delta_38yr = .data$value.x - .data$value) %>%
-                      select(.data$lake, .data$metric, .data$variable,
-                             .data$delta_38yr, .data$delta_1981)
 ```
 
 ```{r tables, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
@@ -174,7 +148,7 @@ metric_name     <- "median_level"
 metric_title    <- ""
 variable_title  <- "Month"
 variable_breaks <- "sort"
-variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+variable_labels <- c("Overall","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                     "Aug", "Sep", "Oct", "Nov", "Dec")
 variable_colors <- c("#000000", brewer.pal(12, "Paired"))
 value_title     <- "Median Level (ft)"
@@ -188,16 +162,19 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r median_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title = "", variable_breaks, 
-           variable_labels, value_title, convert_units = "", 
-           rotate_xticks = TRUE)
+```{r median_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title,
+                       rotate_xticks = TRUE)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title = "", variable_breaks, 
+#            variable_labels, value_title, convert_units = "", 
+#            rotate_xticks = TRUE)
 ```
 
 <br>
 
-```{r median_level_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r median_level_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (ft)")
@@ -210,12 +187,12 @@ metric_name     <- "cv_level"
 metric_title    <- ""
 variable_title  <- "Month"
 variable_breaks <- "sort"
-variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+variable_labels <- c("Overall","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
                     "Aug", "Sep", "Oct", "Nov", "Dec")
 variable_colors <- c("#000000", brewer.pal(12, "Paired"))
 value_title     <- "CV of Levels (%)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
-                              value = c(30, 30, 0.03))
+                              value = c(30, 30, 5))
 plot_sensitivity(ts_summary, metric_name, metric_title, variable_title, 
                  variable_breaks, variable_labels, variable_colors, text_size,
                  hlines = hlines)
@@ -223,23 +200,24 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r cv_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title = "", variable_breaks, 
-           variable_labels, value_title, convert_units = "", 
-           ytick_precision = NA, same_range = FALSE, rotate_xticks = TRUE)
+```{r cv_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title,
+                       rotate_xticks = TRUE)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title = "", variable_breaks, 
+#            variable_labels, value_title, convert_units = "", 
+#            ytick_precision = NA, same_range = FALSE, rotate_xticks = TRUE)
 ```
 <br>
 
-```{r cv_level_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r cv_level_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.01)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (%)")
 ```
 
 <br>
-
-# Frequency
 
 ## Exceedance probabilities
 
@@ -263,14 +241,16 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r exceedance_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title = "", variable_breaks, 
-           variable_labels, value_title, convert_units = "")
+```{r exceedance_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title = "", variable_breaks, 
+#            variable_labels, value_title, convert_units = "")
 ```
 <br>
 
-```{r exceedance_level_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5.5}
+```{r exceedance_level_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5.5}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (ft)")
@@ -283,8 +263,8 @@ metric_name     <- "exceedance_range"
 metric_title    <- ""
 variable_title  <- "Exceed. Prob"
 variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
-variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
-                     "Monthly 10%-90%", "Monthly 25%-75%")
+variable_labels <- c("Annual\n10%-90%", "Annual\n25%-75%", 
+                     "Monthly\n10%-90%", "Monthly\n25%-75%")
 variable_colors <- c(brewer.pal(4, "Paired"))
 value_title     <- "Lake Level Range (ft)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
@@ -297,20 +277,82 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r exceedance_range_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, metric_title = "",
-           variable_title = "", variable_breaks, variable_labels, value_title,
-           convert_units = "", rotate_xticks = TRUE)
+```{r exceedance_range_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, metric_title = "",
+#            variable_title = "", variable_breaks, variable_labels, value_title,
+#            convert_units = "", rotate_xticks = TRUE)
 ```
 <br>
 
-```{r exceedance_range_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
+```{r exceedance_range_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (ft)")
 ```
 
 <br>
+
+# Frequency
+
+## Number of times
+```{r num_exceed_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "num_dur_decade"
+metric_title    <- ""
+variable_title  <- "Exceed. Prob"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+variable_colors <- c(brewer.pal(6, "Paired")[2:1],
+                     brewer.pal(6, "Paired")[5:6])
+value_title     <- "Times/Decade"
+hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
+                              value = c(30, 30, 1))
+
+plot_sensitivity(ts_summary, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels, variable_colors, text_size,
+                 hlines = hlines)
+```
+
+```{r num_exceed_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                  variable_breaks, variable_labels, value_title)
+```
+
+```{r num_exceed_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
+                         variable_labels, round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Difference from Full Timeseries (months)")
+```
+
+## Deviation from Median
+```{r dev_median_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "depart_median"
+metric_title    <- ""
+variable_title  <- "Diff. from Median"
+variable_breaks <- c("0.3m", "-0.3m")
+variable_labels <- c("+1ft", "-1ft")
+variable_colors <- c("#1F78B4", "#E31A1C")
+value_title     <- "Probability (%)"
+hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
+                              value = c(30, 30, 5))
+
+plot_sensitivity(ts_summary, metric_name, metric_title, variable_title, 
+                 variable_breaks, variable_labels, variable_colors, text_size,
+                 hlines = hlines)
+```
+
+```{r dev_median_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                  variable_breaks, variable_labels, value_title)
+```
+
+```{r dev_median_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
+                         variable_labels, round_precision = 0.1)
+kableExtra::kable(table_df, caption = "Difference from Full Timeseries (%)")
+```
+
 
 # Duration
 
@@ -335,14 +377,13 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r median_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title = "", variable_breaks, 
-           variable_labels, value_title, convert_units = "", same_range = FALSE)
+```{r median_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
 ```
 <br>
 
-```{r median_dur_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r median_dur_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (months)")
@@ -369,13 +410,15 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r cv_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title = "", variable_breaks, 
-           variable_labels, value_title, convert_units = "", same_range = FALSE)
+```{r cv_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title = "", variable_breaks, 
+#            variable_labels, value_title, convert_units = "", same_range = FALSE)
 ```
 
-```{r cv_dur_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r cv_dur_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (%)")
@@ -393,7 +436,7 @@ metric_title    <- ""
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
-variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+variable_colors <- c(brewer.pal(9, "Paired")[c(1, 9, 5)])
 value_title     <- "Rise Rate (ft/time period)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
                               value = c(30, 30, 0.1))
@@ -405,13 +448,15 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r median_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title, variable_breaks, variable_labels, 
-           value_title, convert_units = "", same_range = FALSE)
+```{r median_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title, variable_breaks, variable_labels, 
+#            value_title, convert_units = "", same_range = FALSE)
 ```
 
-```{r median_rise_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r median_rise_rate_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (ft/time period)")
@@ -425,10 +470,10 @@ metric_title    <- ""
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
-variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+variable_colors <- c(brewer.pal(9, "Paired")[c(1, 9, 5)])
 value_title     <- "CV of Rise Rate (%)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
-                              value = c(30, 30, 5))
+                              value = c(30, 30, 10))
 
 plot_sensitivity(ts_summary, metric_name, metric_title, variable_title, 
                  variable_breaks, variable_labels, variable_colors, text_size,
@@ -437,13 +482,15 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r cv_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title, variable_breaks, variable_labels, 
-           value_title, convert_units = "", same_range = FALSE)
+```{r cv_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title, variable_breaks, variable_labels, 
+#            value_title, convert_units = "", same_range = FALSE)
 ```
 
-```{r cv_rise_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r cv_rise_rate_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (%)")
@@ -457,7 +504,7 @@ metric_title    <- ""
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
-variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+variable_colors <- c(brewer.pal(9, "Paired")[c(1, 9, 5)])
 value_title     <- "Fall Rate (ft/time period)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
                               value = c(30, 30, 0.1))
@@ -469,13 +516,12 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r median_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title, variable_breaks, variable_labels, 
-           value_title, convert_units = "", same_range = FALSE)
+```{r median_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
 ```
 
-```{r median_fall_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r median_fall_rate_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.01)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (ft/time period)")
@@ -489,10 +535,10 @@ metric_title    <- ""
 variable_title  <- "Months"
 variable_breaks <- "sort"
 variable_labels <- "breaks"
-variable_colors <- c(brewer.pal(6, "Paired")[c(1, 3, 5)])
+variable_colors <- c(brewer.pal(9, "Paired")[c(1, 9, 5)])
 value_title     <- "CV of Fall Rate (%)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
-                              value = c(30, 30, 5))
+                              value = c(30, 30, 10))
 
 plot_sensitivity(ts_summary, metric_name, metric_title, variable_title, 
                  variable_breaks, variable_labels, variable_colors, text_size,
@@ -501,13 +547,15 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 
 <br>
 
-```{r cv_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
-plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-           metric_title = "", variable_title, variable_breaks, variable_labels, 
-           value_title, convert_units = "", same_range = FALSE)
+```{r cv_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+                       variable_breaks, variable_labels, value_title)
+# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
+#            metric_title = "", variable_title, variable_breaks, variable_labels, 
+#            value_title, convert_units = "", same_range = FALSE)
 ```
 
-```{r cv_fall_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r cv_fall_rate_03, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (%)")

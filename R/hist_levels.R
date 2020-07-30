@@ -1,7 +1,9 @@
 #' Dataset: CSLS imputed lake levels
 #'
-#' Monthly historical lake levels from Bob Smail's bayesian structural time
-#' series monte carlo approach.
+#' Monthly historical lake levels from Bob Smail's Bayesian structural time
+#' series monte carlo approach. The lake level time series represented by the
+#' "level" column is the most representative simulation from the Bayesian model.
+#' Mean, standard deviation, etc. capture the stats of all 4000 simulations.
 #'
 #' @docType data
 #'

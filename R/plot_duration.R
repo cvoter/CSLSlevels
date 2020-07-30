@@ -43,7 +43,7 @@ plot_duration <- function(df,
                           hist_color = "grey80",
                           density_color = "#c00000",
                           line_size = 1,
-                          bin_size = 2,
+                          bin_size = 1,
                           lakes = c("Pleasant", "Long", "Plainfield")) {
 
   df <- df %>% filter(.data$lake %in% lakes)
@@ -59,14 +59,10 @@ plot_duration <- function(df,
   # Basic histogram w/lines for estimate, points for observations
   plot_obj <- ggplot(data = durations,
                      aes(x = .data$value)) +
-              geom_histogram(aes(y = ..density..),
-                             binwidth = bin_size,
+              geom_histogram(binwidth = bin_size,
                              colour = NA,
                              fill = hist_color,
-                             size = line_size) +
-              geom_density(alpha = 0.2,
-                           fill = density_color,
-                           size = line_size)
+                             size = line_size)
 
   # If more than one lake, use facets
   if (length(unique(df$lake)) > 1 & length(probs) == 1) {
@@ -93,13 +89,13 @@ plot_duration <- function(df,
                            size = line_size)
     if (show_labels) {
       plot_obj <- plot_obj +
-        geom_text(data = median,
-                  aes(x = .data$median,
-                      y = 0.2,
-                      label = sprintf("%s months", .data$median)),
-                  hjust = 0,
-                  nudge_x = 1,
-                  family = "Segoe UI Semibold")
+                  geom_text(data = median,
+                            aes(x = .data$median,
+                                y = 8,
+                                label = sprintf("%s mo.", .data$median)),
+                            hjust = 0,
+                            nudge_x = 1,
+                            family = "Segoe UI Semibold")
     }
   }
 
@@ -110,15 +106,15 @@ plot_duration <- function(df,
     plot_obj <- plot_obj +
                 scale_x_continuous(expand = c(0,0),
                                    limits = c(0, max_months+bin_size),
-                                   breaks = seq(0,max_months,5),
-                                   labels = c(as.character(seq(0,max_months-5,5)),
+                                   breaks = seq(0,max_months,2),
+                                   labels = c(as.character(seq(0,max_months-2,2)),
                                               sprintf(">%d", max_months)))
   }
 
   # Add in aesthetics
   plot_obj <- plot_obj +
               labs(x = "Number of months",
-                   y = "Density",
+                   y = "Number of times",
                    title = title) +
               scale_y_continuous(expand = c(0,0))  +
               theme_bw() +
