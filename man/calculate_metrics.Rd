@@ -6,19 +6,15 @@
 \usage{
 calculate_metrics(
   df = CSLSlevels::csls_levels,
-  col_name = "level_pred",
   metrics = c("median_level", "cv_level", "exceedance_level", "exceedance_range",
-    "median_dur", "cv_dur", "median_rise_rate", "cv_rise_rate", "median_fall_rate",
-    "cv_fall_rate")
+    "depart_median", "median_dur", "cv_dur", "num_dur", "num_dur_decade",
+    "median_rise_rate", "cv_rise_rate", "median_fall_rate", "cv_fall_rate")
 )
 }
 \arguments{
 \item{df}{data frame to use, defaults "CSLSlevels::csls_levels". Must include
 columns for "date" (must be POSIXct), "lake" (must be factor), and
 one with the lake levels (named in "col_name" argument).}
-
-\item{col_name}{name of column with lake level values to use. Defaults to
-"level_pred".}
 
 \item{metrics}{a list of which metrics to use. Defaults to all of them
 c("median_level", "cv_level", "exceedance_level",

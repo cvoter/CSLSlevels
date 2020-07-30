@@ -103,7 +103,7 @@ for (nyear in 1:max_years) {
   year_metrics <- NULL
   for (nsim in 1:max(this_year$nsim)) {
     this_sim             <- this_year %>% filter(.data$nsim == !!nsim)
-    sim_metrics          <- calculate_metrics(this_sim, col_name = "level")
+    sim_metrics          <- calculate_metrics(this_sim)
     sim_metrics$nsim     <- nsim
     year_metrics[[nsim]] <- sim_metrics
   }

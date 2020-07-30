@@ -44,6 +44,7 @@
 #' @param show_uncertainty defaults to FALSE. If TRUE, shows dark grey ribbon
 #'   representing mean +/- one standard deviation and a light grey ribbon
 #'   representing mean +/- two standard deviations.
+#' @param ncol number of columns. Defaults to 1 (stacks plots vertically), but can be set to 3 to show all CSLS lakes horizontally
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
@@ -74,7 +75,8 @@ plot_levels <- function(df,
                         force_pfl = TRUE,
                         convert_units = "",
                         grid_off = TRUE,
-                        show_uncertainty = FALSE) {
+                        show_uncertainty = FALSE,
+                        ncol = 1) {
   # Filter to desired lakes
   df <- df %>% filter(.data$lake %in% lakes)
 
@@ -167,7 +169,7 @@ plot_levels <- function(df,
     plot_obj <- plot_obj +
                 geom_blank(data = range,
                            aes(x = .data$date, y = .data$level)) +
-                facet_wrap(~lake, scales = "free_y", ncol = 1)
+                facet_wrap(~lake, scales = "free_y", ncol = ncol)
   }
 
   # If want to highlight a particular exceedance probability, calculate that here

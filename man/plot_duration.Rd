@@ -16,7 +16,7 @@ plot_duration(
   hist_color = "grey80",
   density_color = "#c00000",
   line_size = 1,
-  bin_size = 2,
+  bin_size = 1,
   lakes = c("Pleasant", "Long", "Plainfield")
 )
 }

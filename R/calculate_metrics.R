@@ -28,8 +28,6 @@
 #' @param df data frame to use, defaults "CSLSlevels::csls_levels". Must include
 #'           columns for "date" (must be POSIXct), "lake" (must be factor), and
 #'           one with the lake levels (named in "col_name" argument).
-#' @param col_name name of column with lake level values to use. Defaults to
-#'                 "level_pred".
 #' @param metrics a list of which metrics to use. Defaults to all of them
 #'                c("median_level", "cv_level", "exceedance_level",
 #'                "exceedance_range", "median_dur", "cv_dur",
@@ -55,22 +53,21 @@
 #' @export
 
 calculate_metrics <- function(df = CSLSlevels::csls_levels,
-                              col_name = "level_pred",
                               metrics = c("median_level",
                                           "cv_level",
                                           "exceedance_level",
                                           "exceedance_range",
+                                          "depart_median",
                                           "median_dur",
                                           "cv_dur",
+                                          "num_dur",
+                                          "num_dur_decade",
                                           "median_rise_rate",
                                           "cv_rise_rate",
                                           "median_fall_rate",
                                           "cv_fall_rate")) {
 
   # 0. Setup data frames =======================================================
-  # Rename column with level info
-  colnames(df)[which(colnames(df) == col_name)] <- "level"
-
   # Include month information
   df$month <- month(df$date)
   df$year  <- year(df$date)
@@ -141,8 +138,7 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
-  # 2. FREQUENCY ===============================================================
-  # 2a. Exceedance probability levels ------------------------------------------
+  # 1c. Exceedance probability levels ------------------------------------------
   if ("exceedance_level" %in% metrics) {
     exceeds <- calculate_exceedances(df, probs = c(10, 25, 50, 75, 90))
     vals    <- exceeds %>%
@@ -151,7 +147,7 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
-  # 2b. Exceedance probability ranges ------------------------------------------
+  # 1d. Exceedance probability ranges ------------------------------------------
   if ("exceedance_range" %in% metrics) {
     # by all monthly values
     exceeds <- calculate_exceedances(df,
@@ -193,9 +189,50 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
-  # 3. DURATION ================================================================
+  # 2. FREQUENCY ===============================================================
   durations <- calculate_durations(df, probs = c(10, 25, 75, 90))
 
+  # 2a. Departure from median --------------------------------------------------
+  if ("depart_median" %in% metrics) {
+    probs   <- calculate_exceedances(df, departures = c(NISTftTOmeter(1),
+                                                        NISTftTOmeter(-1)))
+    vals    <- probs %>%
+               mutate(metric = "depart_median") %>%
+               select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  # 2b. Frequency of high/low levels -------------------------------------------
+  if ("num_dur" %in% metrics) {
+    vals <- durations %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_dur",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  # 3d. Frequency of high/low levels per decade --------------------------------
+  if ("num_dur_decade" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake, .data$month) %>%
+            select(.data$lake, .data$n) %>%
+            unique()
+    vals <- durations %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_dur_decade",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10)) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  # 3. DURATION ================================================================
   # 3a. Mean duration above/below levels ---------------------------------------
   if ("median_dur" %in% metrics) {
     vals <- durations %>%

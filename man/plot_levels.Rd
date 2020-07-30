@@ -22,7 +22,8 @@ plot_levels(
   force_pfl = TRUE,
   convert_units = "",
   grid_off = TRUE,
-  show_uncertainty = FALSE
+  show_uncertainty = FALSE,
+  ncol = 1
 )
 }
 \arguments{
@@ -81,6 +82,8 @@ from meters to feet.}
 \item{show_uncertainty}{defaults to FALSE. If TRUE, shows dark grey ribbon
 representing mean +/- one standard deviation and a light grey ribbon
 representing mean +/- two standard deviations.}
+
+\item{ncol}{number of columns. Defaults to 1 (stacks plots vertically), but can be set to 3 to show all CSLS lakes horizontally}
 }
 \value{
 plot_obj, a plot with the imputed and observed lake levels.
