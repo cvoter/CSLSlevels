@@ -12,6 +12,7 @@
 #' @param title string to use for title of plot, defaults to "".
 #' @param text_size size of text, defaults to 12
 #' @param pfl_is_long defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.
+#' @param force_range defaults to TRUE to force y-limits of all subplots to be the same.
 #'
 #' @return plot_obj, a plot with the distribution(s) of estimated lake elevation
 #'
@@ -26,7 +27,8 @@ plot_magnitude <- function(df,
                            convert_to_ft = TRUE,
                            title = "",
                            text_size = 12,
-                           pfl_is_long = TRUE) {
+                           pfl_is_long = TRUE,
+                           force_range = TRUE) {
 
   df <- df %>% filter(.data$lake %in% lakes)
 
@@ -55,16 +57,21 @@ plot_magnitude <- function(df,
 
   # If more than one lake, use facets
   if (length(unique(df$lake)) > 1) {
-    range     <- specify_range(df,
-                               group_col = "lake",
-                               value_col = "level",
-                               tick_precision = 0.5,
-                               pfl_is_long)
+    if (force_range){
+      range     <- specify_range(df,
+                                 group_col = "lake",
+                                 value_col = "level",
+                                 tick_precision = 0.5,
+                                 pfl_is_long)
 
-    plot_obj <- plot_obj +
-                facet_wrap(~lake, ncol = 1, scales = "free_y") +
-                geom_blank(data = range,
-                           aes(x = "Overall", y = .data$level))
+      plot_obj <- plot_obj +
+                  facet_wrap(~lake, ncol = 1, scales = "free_y") +
+                   geom_blank(data = range,
+                              aes(x = "Overall", y = .data$level))
+    } else {
+      plot_obj <- plot_obj +
+                  facet_wrap(~lake, ncol = 1, scales = "free_y")
+    }
   }
 
   # Add in aesthetics

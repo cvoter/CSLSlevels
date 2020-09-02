@@ -7,6 +7,7 @@
 plot_short_v_long(
   df_short,
   df_long,
+  df_early,
   metric_name,
   variable_breaks = "sort",
   variable_labels,
@@ -23,6 +24,9 @@ short time series}
 
 \item{df_long}{data frame with the median/sd for hydrologic metrics w/a
 long time series}
+
+\item{df_early}{data frame with the median/sd for hydrologic metrics w/a
+short but early time series}
 
 \item{metric_name}{name of metric to display on this plot}
 

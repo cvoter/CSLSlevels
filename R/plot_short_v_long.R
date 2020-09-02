@@ -7,6 +7,8 @@
 #'                 short time series
 #' @param df_long data frame with the median/sd for hydrologic metrics w/a
 #'                 long time series
+#' @param df_early data frame with the median/sd for hydrologic metrics w/a
+#'                 short but early time series
 #' @param metric_name name of metric to display on this plot
 #' @param variable_breaks vector with values to use for variable breaks in color
 #'                        legend. Defaults to "sort" to convert unique options
@@ -35,6 +37,7 @@
 
 plot_short_v_long <- function(df_short,
                               df_long,
+                              df_early,
                               metric_name,
                               variable_breaks = "sort",
                               variable_labels,
@@ -51,7 +54,11 @@ plot_short_v_long <- function(df_short,
   df_long  <- df_long %>%
               filter(.data$metric == metric_name)%>%
               mutate(ts = "1938-2019")
+  df_early  <- df_early %>%
+               filter(.data$metric == metric_name)%>%
+               mutate(ts = "1938-1975")
   df       <- rbind(df_short, df_long)
+  df       <- rbind(df, df_early)
 
   # Arrange variable breaks/labels
   if (variable_breaks == "sort") {
@@ -98,11 +105,11 @@ plot_short_v_long <- function(df_short,
                    title = "") +
               facet_wrap(~lake, scales = "free_y") +
               scale_color_manual(name = "",
-                                 breaks = c("1938-2019", "1981-2018"),
-                                 values = c("black", "grey70")) +
+                                 breaks = c("1938-1975", "1938-2019", "1981-2018"),
+                                 values = c("grey40", "black", "grey70")) +
               scale_shape_manual(name = "",
-                                 breaks = c("1938-2019", "1981-2018"),
-                                 values = c(16, 17)) +
+                                 breaks = c("1938-1975", "1938-2019", "1981-2018"),
+                                 values = c(17, 16, 15)) +
               theme_bw() +
               theme(text = element_text(family = "Segoe UI Semilight",
                                         size = text_size),

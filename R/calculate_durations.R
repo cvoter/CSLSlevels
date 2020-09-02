@@ -37,9 +37,21 @@ calculate_durations <- function(df, probs = c(10, 25, 75, 90)) {
       } else {
         flags <- ifelse(this_lake$level <= this_lake[,prob_name], 1, 0)
       }
-      duration  <- data.frame(lake = lake,
-                              variable = prob_name,
-                              value = rle(flags)$lengths[which(rle(flags)$values == 1)])
+
+      # If 50%, note time above ("a") and below ("b")
+      if (prob == 50) {
+        duration1  <- data.frame(lake = lake,
+                                 variable = sprintf("a%s", prob_name),
+                                 value = rle(flags)$lengths[which(rle(flags)$values == 1)])
+        duration2  <- data.frame(lake = lake,
+                                 variable = sprintf("b%s", prob_name),
+                                 value = rle(flags)$lengths[which(rle(flags)$values == 0)])
+        duration   <- rbind(duration1, duration2)
+      } else {
+        duration  <- data.frame(lake = lake,
+                                variable = prob_name,
+                                value = rle(flags)$lengths[which(rle(flags)$values == 1)])
+      }
       durations <- rbind(durations, duration)
     }
   }

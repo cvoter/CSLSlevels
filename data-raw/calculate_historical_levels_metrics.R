@@ -93,6 +93,7 @@ levels_bsts$lake   <- factor(levels_bsts$lake, levels = lakes)
 
 hist_metrics_long  <- NULL
 hist_metrics_short <- NULL
+hist_metrics_early <- NULL
 for (sim in unique(levels_bsts$sim)) {
   if (sim %% 20 == 0) {
     message(sprintf("Starting sim %s", sim))
@@ -114,9 +115,22 @@ for (sim in unique(levels_bsts$sim)) {
   this_sim     <- calculate_metrics(this_rank)
   this_sim$sim <- sim
   hist_metrics_short[[sim]] <- this_sim
+
+  # 1938-1975 metrics
+  this_rank    <- levels_bsts %>%
+                  filter(.data$sim == !!sim) %>%
+                  select(lake = .data$lake,
+                         date = .data$date,
+                         level = .data$level) %>%
+                  filter(year(.data$date) >= 1938,
+                         year(.data$date) <= 1975)
+  this_sim     <- calculate_metrics(this_rank)
+  this_sim$sim <- sim
+  hist_metrics_early[[sim]] <- this_sim
 }
 hist_metrics_long  <- bind_rows(hist_metrics_long)
 hist_metrics_short <- bind_rows(hist_metrics_short)
+hist_metrics_early <- bind_rows(hist_metrics_early)
 
 # Convert level metrics back from depths
 level_metrics     <- c("median_level", "exceedance_level")
@@ -125,13 +139,20 @@ hist_metrics_long <- left_join(hist_metrics_long, lake_bottom) %>%
                                          .data$value + .data$bottom, .data$value))
 hist_metrics_long$bottom <- NULL
 hist_metrics_long$lake   <- factor(hist_metrics_long$lake, levels = lakes)
+
 hist_metrics_short <- left_join(hist_metrics_short, lake_bottom) %>%
                       mutate(value = ifelse(.data$metric %in% level_metrics,
                                           .data$value + .data$bottom, .data$value))
 hist_metrics_short$bottom <- NULL
 hist_metrics_short$lake   <- factor(hist_metrics_short$lake, levels = lakes)
 
+hist_metrics_early <- left_join(hist_metrics_early, lake_bottom) %>%
+                      mutate(value = ifelse(.data$metric %in% level_metrics,
+                                            .data$value + .data$bottom, .data$value))
+hist_metrics_early$bottom <- NULL
+hist_metrics_early$lake   <- factor(hist_metrics_early$lake, levels = lakes)
+
 # SAVE: Write out
-# usethis::use_data(levels_bsts, overwrite = TRUE, compress = "xz")
 usethis::use_data(hist_levels, hist_metrics_long, hist_metrics_short,
                   overwrite = TRUE, compress = "xz")
+usethis::use_data(hist_metrics_early, overwrite = TRUE, compress = "xz")

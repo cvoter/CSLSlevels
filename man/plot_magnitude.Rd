@@ -10,7 +10,8 @@ plot_magnitude(
   convert_to_ft = TRUE,
   title = "",
   text_size = 12,
-  pfl_is_long = TRUE
+  pfl_is_long = TRUE,
+  force_range = TRUE
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ plot_magnitude(
 \item{text_size}{size of text, defaults to 12}
 
 \item{pfl_is_long}{defaults to TRUE to force the y-limits of plainfield lake to the same as long lake.}
+
+\item{force_range}{defaults to TRUE to force y-limits of all subplots to be the same.}
 }
 \value{
 plot_obj, a plot with the distribution(s) of estimated lake elevation

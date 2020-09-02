@@ -17,6 +17,10 @@ calculate_exceedances(
 \item{probs}{a vector with all exceedance probabilities to calculate.
 Defaults to c(10, 25, 50, 75, 90)}
 
+\item{departures}{optional vector with departures from median to evaluate
+probability of occurrence. Defaults to NULL to trigger exceedance
+probability calculations instead.}
+
 \item{melted}{logical defaults to true to indicate should melt data frame to
 just 3 columns (lake, variable, value). Otherwise, keeps as
 data frame with one column per exceedance probability.}

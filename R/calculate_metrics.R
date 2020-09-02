@@ -190,7 +190,7 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
   }
 
   # 2. FREQUENCY ===============================================================
-  durations <- calculate_durations(df, probs = c(10, 25, 75, 90))
+  durations <- calculate_durations(df, probs = c(10, 25, 50, 75, 90))
 
   # 2a. Departure from median --------------------------------------------------
   if ("depart_median" %in% metrics) {
