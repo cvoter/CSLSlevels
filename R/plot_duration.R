@@ -49,9 +49,16 @@ plot_duration <- function(df,
   df <- df %>% filter(.data$lake %in% lakes)
 
   durations <- calculate_durations(df, probs)
+  if (50 %in% probs) {
+    durations <- durations %>%
+                 filter(.data$variable != "b50") %>%
+                 mutate(variable = as.character(.data$variable),
+                        variable = ifelse(.data$variable == "a50",
+                                          "50", .data$variable))
+  }
   durations$variable <- factor(durations$variable,
-                               levels = levels(durations$variable),
-                               labels = sprintf("%s%%", levels(durations$variable)))
+                               levels = unique(durations$variable),
+                               labels = sprintf("%s%%", unique(durations$variable)))
   if (!is.null(max_months)) {
     durations$value[durations$value > max_months] <- max_months
   }

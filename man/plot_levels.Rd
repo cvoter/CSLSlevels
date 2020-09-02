@@ -19,6 +19,7 @@ plot_levels(
   line_size = 1,
   point_size = 3,
   npretty_breaks = NULL,
+  force_range = TRUE,
   force_pfl = TRUE,
   convert_units = "",
   grid_off = TRUE,
@@ -70,6 +71,9 @@ suggest setting color_vals to c("grey70", "#1B9E77",
 \item{npretty_breaks}{defaults to NULL, set to 3 to limit Long, Plainfield,
 and Pleasant to integers (or play around, may be
 different with different periods of record)}
+
+\item{force_range}{defaults to TRUE to force y-limits of all facets to have
+the same range.}
 
 \item{force_pfl}{defaults to TRUE to force the y-limits of plainfield lake to
 the same as long lake.}

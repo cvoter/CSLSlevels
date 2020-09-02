@@ -1,0 +1,691 @@
+---
+title: "CSLS Lake Metrics"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Lake Metrics2}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+library(CSLSlevels)
+library(dplyr)
+library(reshape2)
+library(ggplot2)
+library(RColorBrewer)
+library(extrafont)
+library(lubridate)
+library(NISTunits)
+library(stringr)
+library(reshape2)
+
+# Parameters
+text_size         <- 12
+lakes             <- c("Pleasant", "Long", "Plainfield")
+
+# Data
+hist_levels       <- CSLSlevels::hist_levels
+hist_levels_short <- hist_levels %>%
+                     filter(year(.data$date) >= 1981,
+                            year(.data$date) <= 2018)
+hist_metrics       <- calculate_metrics(hist_levels_short)
+hist_metrics_short <- CSLSlevels::hist_metrics_short %>%
+                      filter(.data$lake != "Devils") %>%
+                      group_by(.data$lake, .data$metric, .data$variable) %>%
+                      summarise(median = median(.data$value),
+                                sd = sd(.data$value)) %>%
+                      ungroup()
+hist_metrics_long  <- CSLSlevels::hist_metrics_long %>%
+                      filter(.data$lake != "Devils") %>%
+                      group_by(.data$lake, .data$metric, .data$variable) %>%
+                      summarise(median = median(.data$value),
+                                sd = sd(.data$value)) %>%
+                      ungroup()
+
+# Functions
+create_table <- function(df, 
+                         metric_name, 
+                         variable_breaks, 
+                         variable_labels,
+                         convert_units = "",
+                         round_precision = NA) {
+  table_df <- df %>% 
+              filter(.data$metric == metric_name) %>%
+              select(.data$lake, .data$variable, .data$median, .data$sd)
+  
+  if (convert_units == "meterTOft") {
+    table_df <- table_df %>% mutate_at(c("median", "sd"), NISTmeterTOft)
+  }
+  if (!is.na(round_precision)) {
+    table_df$median <- round((1/round_precision)*table_df$median)/(1/round_precision)
+    table_df$sd     <- round((1/round_precision)*table_df$sd)/(1/round_precision)
+  }
+  if (variable_breaks == "sort") {
+    variable_breaks <- sort(as.numeric(unique(table_df$variable)))
+  }
+  if (variable_labels == "breaks") {
+    variable_labels <- variable_breaks
+  } else if (variable_labels == "percent") {
+    variable_labels <- sprintf("%d%%", variable_breaks)
+  }
+  table_df$variable  <- factor(table_df$variable,
+                               levels = variable_breaks,
+                               labels = variable_labels)
+  
+  table_df$text <- sprintf("%s \U00B1 %s", table_df$median, table_df$sd)
+
+  table_df <- dcast(table_df, lake~variable, value.var = "text")
+  colnames(table_df) <- c("Lake", variable_labels)
+  
+  return(table_df)
+}
+```
+
+<br>
+
+# Historical Lake Levels
+
+Estimated lake levels from 1938-2019 for each study lake (black line) with the
+mean value of all estimations +/- one standard deviation shown in dark grey
+(captures 68.2% of estimated values), the mean value of all estimations +/- two
+standard deviations shown in light grey (captures 95% of estimated values), and
+observations shown as points.
+
+```{r levels01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=5}
+plot_levels(hist_levels, 
+            legend_pos = "top", 
+            show_obs_type = TRUE, 
+            color_vals = c("black", "#1B9E77", "#7570B3", "#D95F02"), 
+            line_size = 0.7, 
+            point_size = 1.5, 
+            npretty_breaks = 5,  
+            convert_units = "meterTOft", 
+            grid_off = FALSE, 
+            show_uncertainty = TRUE,
+            text_size = text_size,
+            lakes = c("Pleasant", "Long", "Plainfield"),
+            force_range = FALSE)
+```
+
+<br>
+
+
+```{r levels02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10.5, fig.height=6.5}
+plot_levels(hist_levels_short, 
+            legend_pos = "right", 
+            show_obs_type = TRUE, 
+            color_vals = c("black", "#1B9E77", "#7570B3", "#D95F02"), 
+            line_size = 0.7, 
+            point_size = 2.5, 
+            npretty_breaks = 5,  
+            convert_units = "meterTOft", 
+            grid_off = FALSE, 
+            show_uncertainty = TRUE,
+            text_size = 24,
+            lakes = c("Pleasant", "Long", "Plainfield"),
+            force_range = FALSE)
+```
+```{r levels03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10.5, fig.height=6.5}
+#7030A0
+plot_levels(hist_levels_short, 
+            legend_pos = "right", 
+            color_vals = c("black", "grey40"), 
+            line_size = 0.7, 
+            point_size = 2.5, 
+            npretty_breaks = 5,  
+            convert_units = "meterTOft", 
+            grid_off = FALSE, 
+            show_uncertainty = FALSE,
+            text_size = 24,
+            lakes = c("Pleasant", "Long", "Plainfield"),
+            force_range = FALSE)
+```
+
+```{r levels04, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10.5, fig.height=6.5}
+plot_levels(hist_levels_short, 
+            legend_pos = "right", 
+            color_vals = c("black", "grey40"),
+            all_probs = TRUE, 
+            hline_color = c("#7030A0"),
+            line_size = 0.7, 
+            point_size = 2.5, 
+            npretty_breaks = 5,  
+            convert_units = "meterTOft", 
+            grid_off = FALSE, 
+            show_uncertainty = FALSE,
+            text_size = 24,
+            lakes = c("Pleasant", "Long", "Plainfield"),
+            force_range = FALSE)
+```
+
+```{r levels05, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10.5, fig.height=6.5}
+
+text_size <- 24
+point_size = 2.5
+line_size = 0.7
+hline_color = c("#7030A0")
+color_vals = c("black", "grey40")
+legend_pos = "right"
+
+# Filter to desired lakes
+df <- hist_levels_short %>% 
+      filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+df <- df %>%
+      mutate_at(c("level", "level_obs", "swims_obs", "usgs_obs",
+                  "airphoto_obs", "mean", "sd", "p90", "p10","min",
+                  "max", "upper", "lower"),
+                NISTmeterTOft)
+ytitle <- "Lake Elevation (ft)"
+break_vals    <- c("Estimated", "Observation")
+linetype_vals <- c("solid", "blank")
+shape_vals    <- c(NA, 16)
+
+exceeds <- calculate_exceedances(df, 50)
+line_df <- filter(exceeds, variable == "50") %>%
+           select(.data$lake, .data$value)
+rect_df <- line_df %>%
+           mutate(ymax = .data$value + 1,
+                  ymin = .data$value - 1) %>%
+           select("lake", "ymax", "ymin")
+
+# Determine major/minor date breaks
+date_min <- sprintf("%d-02-01", floor(year(min(df$date))/10)*10)
+date_max <- sprintf("%d-02-01", ceiling(year(max(df$date))/10)*10)
+if (max(year(df$date)) - min(year(df$date)) > 40) {
+  breaks <- seq(as_datetime(date_min), as_datetime(date_max), "20 years")
+} else {
+  breaks <- seq(as_datetime(date_min), as_datetime(date_max), "10 years")
+}
+date_limits  <- c(as_datetime(date_min), as_datetime(date_max) - months(1))
+
+plot_obj <- ggplot(data = df) +
+            geom_line(aes(x = .data$date,
+                          y = .data$level,
+                          color = "Estimated"),
+                      size = line_size) +
+           geom_point(aes(x = .data$date,
+                          y = .data$level_obs,
+                          color = "Observation"),
+                      size = point_size) +
+           facet_wrap(~lake, scales = "free_y", ncol = 1) +
+            geom_rect(data = rect_df,
+                      mapping = aes(xmin = as_datetime(date_limits[1]),
+                                    xmax = as_datetime(date_limits[2]),
+                                    ymin = .data$ymin,
+                                    ymax = .data$ymax),
+                      alpha = 0.25,
+                      fill = hline_color,
+                      color = NA) +
+            geom_hline(data = line_df,
+                       aes(yintercept = .data$value),
+                       color = hline_color,
+                       linetype = "solid",
+                       size = line_size) + 
+            scale_y_continuous(breaks = scales::pretty_breaks(5)) +
+            labs(x = "",
+                 y = ytitle,
+                 color = "",
+                 title = "") +
+            scale_color_manual(breaks = break_vals,
+                               values = color_vals,
+                               guide = guide_legend(override.aes = list(
+                                 linetype = linetype_vals,
+                                 shape = shape_vals))) +
+            scale_x_datetime(breaks = breaks,
+                             date_labels = "%Y",
+                             expand = c(0,0),
+                             limits = date_limits) +
+            theme_bw() +
+            theme(text = element_text(family = "Segoe UI Semilight",
+                                      size = text_size),
+                  plot.title = element_text(hjust = 0.5),
+                  legend.position = legend_pos,
+                  legend.background = element_blank())
+plot_obj
+```
+
+```{r levels06, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10.5, fig.height=6.5}
+
+text_size <- 24
+point_size = 2.5
+line_size = 0.7
+hline_color = c("#7030A0")
+color_vals = c("black", "grey40")
+legend_pos = "right"
+
+# Filter to desired lakes
+df <- hist_levels_short %>% 
+      filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+df <- df %>%
+      mutate_at(c("level", "level_obs", "swims_obs", "usgs_obs",
+                  "airphoto_obs", "mean", "sd", "p90", "p10","min",
+                  "max", "upper", "lower"),
+                NISTmeterTOft)
+ytitle <- "Lake Elevation (ft)"
+break_vals    <- c("Estimated", "Observation")
+linetype_vals <- c("solid", "blank")
+shape_vals    <- c(NA, 16)
+
+exceeds <- calculate_exceedances(df, 10)
+line_df <- exceeds %>%
+           select(.data$lake, .data$value)
+ribbon_df <- merge(df, line_df, by = "lake") %>%
+             group_by(.data$lake, .data$date) %>%
+             summarise(ymin = min(.data$level, .data$value),
+                       ymax = .data$level) %>%
+             ungroup()
+
+# Determine major/minor date breaks
+date_min <- sprintf("%d-02-01", floor(year(min(df$date))/10)*10)
+date_max <- sprintf("%d-02-01", ceiling(year(max(df$date))/10)*10)
+if (max(year(df$date)) - min(year(df$date)) > 40) {
+  breaks <- seq(as_datetime(date_min), as_datetime(date_max), "20 years")
+} else {
+  breaks <- seq(as_datetime(date_min), as_datetime(date_max), "10 years")
+}
+date_limits  <- c(as_datetime(date_min), as_datetime(date_max) - months(1))
+
+plot_obj <- ggplot(data = df) +
+            geom_line(aes(x = .data$date,
+                          y = .data$level,
+                          color = "Estimated"),
+                      size = line_size) +
+           geom_point(aes(x = .data$date,
+                          y = .data$level_obs,
+                          color = "Observation"),
+                      size = point_size) +
+           facet_wrap(~lake, scales = "free_y", ncol = 1) +
+            geom_ribbon(data = ribbon_df,
+                       aes(x = .data$date,
+                           ymin = .data$ymin,
+                           ymax = .data$ymax),
+                      alpha = 0.25,
+                      fill = hline_color,
+                      color = NA) +
+            geom_hline(data = line_df,
+                       aes(yintercept = .data$value),
+                       color = hline_color,
+                       linetype = "solid",
+                       size = line_size) + 
+            scale_y_continuous(breaks = scales::pretty_breaks(5)) +
+            labs(x = "",
+                 y = ytitle,
+                 color = "",
+                 title = "") +
+            scale_color_manual(breaks = break_vals,
+                               values = color_vals,
+                               guide = guide_legend(override.aes = list(
+                                 linetype = linetype_vals,
+                                 shape = shape_vals))) +
+            scale_x_datetime(breaks = breaks,
+                             date_labels = "%Y",
+                             expand = c(0,0),
+                             limits = date_limits) +
+            theme_bw() +
+            theme(text = element_text(family = "Segoe UI Semilight",
+                                      size = text_size),
+                  plot.title = element_text(hjust = 0.5),
+                  legend.position = legend_pos,
+                  legend.background = element_blank())
+plot_obj
+```
+
+```{r levels07, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=10.5, fig.height=6.5}
+
+text_size <- 24
+point_size = 2.5
+line_size = 0.7
+hline_color = c("#7030A0")
+color_vals = c("black", "grey40")
+legend_pos = "right"
+
+# Filter to desired lakes
+df <- hist_levels_short %>% 
+      filter(.data$lake %in% c("Pleasant", "Long", "Plainfield"))
+df <- df %>%
+      mutate_at(c("level", "level_obs", "swims_obs", "usgs_obs",
+                  "airphoto_obs", "mean", "sd", "p90", "p10","min",
+                  "max", "upper", "lower"),
+                NISTmeterTOft)
+ytitle <- "Lake Elevation (ft)"
+break_vals    <- c("Estimated", "Observation")
+linetype_vals <- c("solid", "blank")
+shape_vals    <- c(NA, 16)
+
+exceeds <- calculate_exceedances(df, 90)
+line_df <- exceeds %>%
+           select(.data$lake, .data$value)
+ribbon_df <- merge(df, line_df, by = "lake") %>%
+             group_by(.data$lake, .data$date) %>%
+             summarise(ymax = max(.data$level, .data$value),
+                       ymin = .data$level) %>%
+             ungroup()
+
+# Determine major/minor date breaks
+date_min <- sprintf("%d-02-01", floor(year(min(df$date))/10)*10)
+date_max <- sprintf("%d-02-01", ceiling(year(max(df$date))/10)*10)
+if (max(year(df$date)) - min(year(df$date)) > 40) {
+  breaks <- seq(as_datetime(date_min), as_datetime(date_max), "20 years")
+} else {
+  breaks <- seq(as_datetime(date_min), as_datetime(date_max), "10 years")
+}
+date_limits  <- c(as_datetime(date_min), as_datetime(date_max) - months(1))
+
+plot_obj <- ggplot(data = df) +
+            geom_line(aes(x = .data$date,
+                          y = .data$level,
+                          color = "Estimated"),
+                      size = line_size) +
+           geom_point(aes(x = .data$date,
+                          y = .data$level_obs,
+                          color = "Observation"),
+                      size = point_size) +
+           facet_wrap(~lake, scales = "free_y", ncol = 1) +
+            geom_ribbon(data = ribbon_df,
+                       aes(x = .data$date,
+                           ymin = .data$ymin,
+                           ymax = .data$ymax),
+                      alpha = 0.25,
+                      fill = hline_color,
+                      color = NA) +
+            geom_hline(data = line_df,
+                       aes(yintercept = .data$value),
+                       color = hline_color,
+                       linetype = "solid",
+                       size = line_size) + 
+            scale_y_continuous(breaks = scales::pretty_breaks(5)) +
+            labs(x = "",
+                 y = ytitle,
+                 color = "",
+                 title = "") +
+            scale_color_manual(breaks = break_vals,
+                               values = color_vals,
+                               guide = guide_legend(override.aes = list(
+                                 linetype = linetype_vals,
+                                 shape = shape_vals))) +
+            scale_x_datetime(breaks = breaks,
+                             date_labels = "%Y",
+                             expand = c(0,0),
+                             limits = date_limits) +
+            theme_bw() +
+            theme(text = element_text(family = "Segoe UI Semilight",
+                                      size = text_size),
+                  plot.title = element_text(hjust = 0.5),
+                  legend.position = legend_pos,
+                  legend.background = element_blank())
+plot_obj
+```
+
+```{r duration, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8.5, fig.height=6.5}
+plot_duration(hist_levels_short, 
+              probs = c(10, 90), 
+              show_median = FALSE, 
+              bin_size = 1, 
+              text_size = 24,
+              max_months = 12) + 
+  facet_grid(lake~variable, switch = "y") +
+  theme(panel.spacing.x = unit(6, "mm"),
+        panel.spacing.y = unit(7, "mm"))
+```
+
+
+<br>
+
+```{r rate_of_change, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8.5, fig.height=6.5}
+plot_rate_change(hist_levels_short, 
+                 text_size = 24,
+                 density_color = "#7030A0",
+                 show_median = FALSE) + 
+  facet_grid(lake~variable, switch = "y") +
+  theme(panel.spacing.x = unit(6, "mm"),
+        panel.spacing.y = unit(7, "mm"))
+```
+
+<br>
+
+```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=8.5, fig.height=6.5}
+plot_df <- hist_metrics_short %>%
+           filter(.data$metric == "exceedance_range") %>%
+           mutate(time = str_sub(.data$variable, 1, 1),
+                  range = str_sub(.data$variable, 3, -1),
+                  median = NISTunits::NISTmeterTOft(.data$median),
+                  sd = NISTunits::NISTmeterTOft(.data$sd)) %>%
+           mutate(range = str_replace(.data$range, "10_90", "10%-90%")) %>%
+           mutate(range = str_replace(.data$range, "25_75", "25%-75%")) %>%
+           mutate(text = sprintf("%s \U00B1 %s", .data$median, .data$sd)) %>%
+           # filter(.data$range != "25%-75%") %>%
+           select(.data$lake, .data$time, .data$range, .data$median, .data$sd)
+plot_df <- dcast(plot_df, lake+range~time, value.var = "median")
+
+
+ggplot(plot_df) +
+  geom_point(aes(x = a, y = m, shape = lake, color = range), 
+             # color = "black",
+             size = 4) +
+  geom_abline(slope = 1, intercept = 0) +
+  labs(x = "Annual Range (ft)",
+       y = "Monthly Range (ft)",
+       shape = "") +
+  theme_bw() +
+  scale_color_manual(name = "",
+                     breaks = c("10%-90%", "25%-75%"),
+                     values = c("black", "grey70")) +
+  theme(text = element_text(family = "Segoe UI Semilight",
+                            size = 24),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "top",
+        legend.box = "vertical",
+        legend.margin = margin(0,0,0,0))
+```
+
+```{r magnitude_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=5, fig.height=5,}
+plot_magnitude(hist_levels_short, text_size = text_size)
+```
+
+<br>
+
+```{r median_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_level"
+metric_title    <- "**Median Lake Level (ft)**"
+variable_breaks <- "sort"
+variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+```{r cv_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_level"
+metric_title    <- "**CV of Lake Levels (%)**"
+variable_breaks <- "sort"
+variable_labels <- c("Annual","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+```{r frequency, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+plot_frequency(hist_levels_short, probs = c(10, 50, 90), text_size = text_size)
+```
+
+<br>
+
+```{r exceedance_level_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6.5}
+metric_name     <- "exceedance_level"
+metric_title    <- "**Exceedance Probability Lake Levels (ft)**"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+## 2. Frequency
+
+```{r num_exceedances_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "num_dur_decade"
+metric_title    <- "**Exceedances per Decade**"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+```{r depart_median_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "depart_median"
+metric_title    <- "**Probability within 1 ft of median (%)**"
+variable_breaks <- c("0.3m", "-0.3m")
+variable_labels <- c("+1ft", "-1ft")
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+## 3. Duration
+
+
+<br>
+
+```{r median_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_dur"
+metric_title    <- "**Median Duration (months)**"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(hist_metrics_long, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+```{r cv_dur_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_dur"
+metric_title    <- "**CV of Duration (%)**"
+variable_breaks <- "sort"
+variable_labels <- "percent"
+
+table_df <- create_table(hist_metrics_long, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+## 4. Rate of change
+
+
+
+<br>
+
+```{r median_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_rise_rate"
+metric_title    <- "**Median Rise Rate (ft/time period)**"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+```{r cv_rise_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_rise_rate"
+metric_title    <- "**CV of Rise Rate (%)**"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+```{r median_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "median_fall_rate"
+metric_title    <- "**Median Fall Rate (ft/time period)**"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+```{r cv_fall_rate_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "cv_fall_rate"
+metric_title    <- "**CV of Fall Rate (%)**"
+variable_breaks <- "sort"
+variable_labels <- "breaks"
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
+<br>
+
+## 5. Timing
+
+
+
+<br>
+
+```{r exceedance_range_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "exceedance_range"
+metric_title    <- "**Exceedance Probability Range (ft)**"
+variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
+variable_labels <- c("Annual 10%-90%", "Annual 25%-75%", 
+                     "Monthly 10%-90%", "Monthly 25%-75%")
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "meterTOft",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```

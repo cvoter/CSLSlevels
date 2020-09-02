@@ -9,7 +9,7 @@
 #' @param melted logical defaults to true to indicate should melt data frame to
 #'               just 3 columns (lake, variable, value). Otherwise, keeps as
 #'               data frame with one column per exceedance probability.
-#' @departures optional vector with departures from median to evaluate
+#' @param departures optional vector with departures from median to evaluate
 #'             probability of occurrence. Defaults to NULL to trigger exceedance
 #'             probability calculations instead.
 #' @return exceeds, a data frame with the names of all lakes and corresponding

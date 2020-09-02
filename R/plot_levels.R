@@ -36,6 +36,8 @@
 #' @param npretty_breaks defaults to NULL, set to 3 to limit Long, Plainfield,
 #'                       and Pleasant to integers (or play around, may be
 #'                       different with different periods of record)
+#' @param force_range defaults to TRUE to force y-limits of all facets to have
+#'                    the same range.
 #' @param force_pfl defaults to TRUE to force the y-limits of plainfield lake to
 #'                  the same as long lake.
 #' @param convert_units logical defaults to "". If "meterTOft", converts values
@@ -72,6 +74,7 @@ plot_levels <- function(df,
                         line_size = 1,
                         point_size = 3,
                         npretty_breaks = NULL,
+                        force_range = TRUE,
                         force_pfl = TRUE,
                         convert_units = "",
                         grid_off = TRUE,
@@ -159,17 +162,22 @@ plot_levels <- function(df,
 
   # If more than one lake, use facets
   if (length(unique(df$lake)) > 1) {
-    range <- specify_range(df,
-                           group_col = "lake",
-                           value_col = "level",
-                           tick_precision = 0.5,
-                           pfl_is_long = force_pfl)
-    range$date <- median(df$date)
+    if (force_range) {
+      range <- specify_range(df,
+                             group_col = "lake",
+                             value_col = "level",
+                             tick_precision = 0.5,
+                             pfl_is_long = force_pfl)
+      range$date <- median(df$date)
 
-    plot_obj <- plot_obj +
-                geom_blank(data = range,
-                           aes(x = .data$date, y = .data$level)) +
-                facet_wrap(~lake, scales = "free_y", ncol = ncol)
+      plot_obj <- plot_obj +
+                  geom_blank(data = range,
+                             aes(x = .data$date, y = .data$level)) +
+                  facet_wrap(~lake, scales = "free_y", ncol = ncol)
+    } else {
+      plot_obj <- plot_obj +
+                  facet_wrap(~lake, scales = "free_y", ncol = ncol)
+    }
   }
 
   # If want to highlight a particular exceedance probability, calculate that here

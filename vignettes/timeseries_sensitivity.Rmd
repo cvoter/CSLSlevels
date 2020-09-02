@@ -38,13 +38,18 @@ hist_metrics_long  <- CSLSlevels::hist_metrics_long %>%
                       summarise(median = median(.data$value),
                                 sd = sd(.data$value)) %>%
                       ungroup()
+hist_metrics_early  <- CSLSlevels::hist_metrics_early %>%
+                      filter(.data$lake != "Devils") %>%
+                      group_by(.data$lake, .data$metric, .data$variable) %>%
+                      summarise(median = median(.data$value),
+                                sd = sd(.data$value)) %>%
+                      ungroup()
 
 ts_summary       <- CSLSlevels::ts_summary
 ts_metrics_short <- CSLSlevels::ts_metrics_short
 ```
 
 ```{r unit_conversions, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
-if (convert_to_ft) {
   length_metrics   <- c("median_level", "exceedance_level", "exceedance_range", 
                       "median_rise_rate", "median_fall_rate")
   ts_summary       <- ts_summary %>%
@@ -66,7 +71,22 @@ if (convert_to_ft) {
                                                NISTmeterTOft(.data$median), .data$median),
                                sd = ifelse(.data$metric %in% length_metrics,
                                            NISTmeterTOft(.data$sd), .data$sd))
-}
+  hist_metrics_early <- hist_metrics_early %>%
+                        mutate(median = ifelse(.data$metric %in% length_metrics,
+                                               NISTmeterTOft(.data$median), .data$median),
+                               sd = ifelse(.data$metric %in% length_metrics,
+                                           NISTmeterTOft(.data$sd), .data$sd))
+
+hist_metrics_diff <- left_join(hist_metrics_long, 
+                               hist_metrics_short, 
+                               by = c("lake", "metric", "variable")) %>%
+                     left_join(hist_metrics_early, 
+                               by = c("lake", "metric", "variable")) %>%
+                     mutate(early_diff = .data$median - .data$median.x,
+                            late_diff = .data$median.y - .data$median.x) %>%
+                     select(.data$lake, .data$metric, .data$variable, .data$early_diff,
+                            .data$late_diff)
+
 ```
 
 ```{r tables, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
@@ -148,9 +168,12 @@ metric_name     <- "median_level"
 metric_title    <- ""
 variable_title  <- "Month"
 variable_breaks <- "sort"
-variable_labels <- c("Overall","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-                    "Aug", "Sep", "Oct", "Nov", "Dec")
-variable_colors <- c("#000000", brewer.pal(12, "Paired"))
+ts_summary      <- ts_summary %>%
+                   mutate(variable = ifelse(.data$variable == "0", 
+                                            "13", .data$variable))
+variable_labels <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec", "Overall")
+variable_colors <- c(brewer.pal(12, "Paired"), "#000000")
 value_title     <- "Median Level (ft)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
                               value = c(30, 30, 0.5))
@@ -163,13 +186,11 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r median_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+variable_labels <- c("Overall", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title,
                        rotate_xticks = TRUE)
-# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-#            metric_title = "", variable_title = "", variable_breaks, 
-#            variable_labels, value_title, convert_units = "", 
-#            rotate_xticks = TRUE)
 ```
 
 <br>
@@ -187,9 +208,9 @@ metric_name     <- "cv_level"
 metric_title    <- ""
 variable_title  <- "Month"
 variable_breaks <- "sort"
-variable_labels <- c("Overall","Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-                    "Aug", "Sep", "Oct", "Nov", "Dec")
-variable_colors <- c("#000000", brewer.pal(12, "Paired"))
+variable_labels <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec", "Overall")
+variable_colors <- c(brewer.pal(12, "Paired"), "#000000")
 value_title     <- "CV of Levels (%)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
                               value = c(30, 30, 5))
@@ -201,13 +222,11 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r cv_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+variable_labels <- c("Overall", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
+                    "Aug", "Sep", "Oct", "Nov", "Dec")
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title,
                        rotate_xticks = TRUE)
-# plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
-#            metric_title = "", variable_title = "", variable_breaks, 
-#            variable_labels, value_title, convert_units = "", 
-#            ytick_precision = NA, same_range = FALSE, rotate_xticks = TRUE)
 ```
 <br>
 
@@ -242,7 +261,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r exceedance_level_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 # plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
 #            metric_title = "", variable_title = "", variable_breaks, 
@@ -263,8 +282,8 @@ metric_name     <- "exceedance_range"
 metric_title    <- ""
 variable_title  <- "Exceed. Prob"
 variable_breaks <- c("a_10_90","a_25_75","m_10_90","m_25_75")
-variable_labels <- c("Annual\n10%-90%", "Annual\n25%-75%", 
-                     "Monthly\n10%-90%", "Monthly\n25%-75%")
+variable_labels <- c("Annual\n10-90%", "Annual\n25-75%", 
+                     "Monthly\n10-90%", "Monthly\n25-75%")
 variable_colors <- c(brewer.pal(4, "Paired"))
 value_title     <- "Lake Level Range (ft)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
@@ -278,7 +297,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r exceedance_range_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 # plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, metric_title = "",
 #            variable_title = "", variable_breaks, variable_labels, value_title,
@@ -315,7 +334,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 ```
 
 ```{r num_exceed_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                   variable_breaks, variable_labels, value_title)
 ```
 
@@ -343,7 +362,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 ```
 
 ```{r dev_median_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                   variable_breaks, variable_labels, value_title)
 ```
 
@@ -378,7 +397,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r median_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 ```
 <br>
@@ -401,7 +420,7 @@ variable_colors <- c(brewer.pal(6, "Paired")[2:1],
                      brewer.pal(6, "Paired")[5:6])
 value_title     <- "CV of Duration (%)"
 hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
-                              value = c(30, 30, 20))
+                              value = c(30, 30, 100))
 
 plot_sensitivity(ts_summary, metric_name, metric_title, variable_title, 
                  variable_breaks, variable_labels, variable_colors, text_size,
@@ -411,7 +430,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r cv_dur_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 # plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
 #            metric_title = "", variable_title = "", variable_breaks, 
@@ -449,7 +468,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r median_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 # plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
 #            metric_title = "", variable_title, variable_breaks, variable_labels, 
@@ -483,7 +502,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r cv_rise_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 # plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
 #            metric_title = "", variable_title, variable_breaks, variable_labels, 
@@ -517,7 +536,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r median_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 ```
 
@@ -548,7 +567,7 @@ plot_sensitivity(ts_summary, metric_name, metric_title, variable_title,
 <br>
 
 ```{r cv_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, metric_name,
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early, metric_name,
                        variable_breaks, variable_labels, value_title)
 # plot_nyear(ts_metrics_short, hist_metrics_long, hist_metrics_short, metric_name, 
 #            metric_title = "", variable_title, variable_breaks, variable_labels, 
