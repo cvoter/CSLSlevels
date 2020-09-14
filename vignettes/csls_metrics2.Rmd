@@ -1,5 +1,5 @@
 ---
-title: "CSLS Lake Metrics"
+title: "CSLS Lake Metrics for presentations"
 output: 
   rmarkdown::html_vignette:
     toc: true
@@ -32,7 +32,10 @@ hist_levels_short <- hist_levels %>%
                             year(.data$date) <= 2018)
 hist_metrics       <- calculate_metrics(hist_levels_short)
 hist_metrics_short <- CSLSlevels::hist_metrics_short %>%
-                      filter(.data$lake != "Devils") %>%
+                      filter(.data$lake != "Devils",
+                             .data$variable != "b50") %>%
+                      mutate(variable = ifelse(as.character(.data$variable) ==
+                                                 "a50", "50", .data$variable)) %>%
                       group_by(.data$lake, .data$metric, .data$variable) %>%
                       summarise(median = median(.data$value),
                                 sd = sd(.data$value)) %>%
