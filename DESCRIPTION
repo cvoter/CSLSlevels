@@ -28,7 +28,8 @@ Imports:
     scales,
     NISTunits,
     ggrepel,
-    bsts
+    bsts,
+    ggsn
 Suggests:
     knitr,
     rmarkdown,
