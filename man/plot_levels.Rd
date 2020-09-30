@@ -24,6 +24,7 @@ plot_levels(
   convert_units = "",
   grid_off = TRUE,
   show_uncertainty = FALSE,
+  show_exceeds = NULL,
   ncol = 1
 )
 }
@@ -86,6 +87,10 @@ from meters to feet.}
 \item{show_uncertainty}{defaults to FALSE. If TRUE, shows dark grey ribbon
 representing mean +/- one standard deviation and a light grey ribbon
 representing mean +/- two standard deviations.}
+
+\item{show_exceeds}{defaults to NULL. If a value (e.g., 10, 90) creates a
+ribbon that highlights when the lake level corresponding
+to the given exceedance probability is exceeded.}
 
 \item{ncol}{number of columns. Defaults to 1 (stacks plots vertically), but can be set to 3 to show all CSLS lakes horizontally}
 }

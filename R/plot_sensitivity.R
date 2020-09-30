@@ -44,14 +44,14 @@
 
 plot_sensitivity <- function(df,
                              metric_name,
-                             metric_title = "",
                              variable_title = "",
                              variable_breaks = "sort",
                              variable_labels,
                              variable_colors = NULL,
                              text_size = 12,
                              vline = 38,
-                             hlines = NULL) {
+                             hlines = NULL,
+                             metric_title = "") {
   plot_df           <- df %>%
                        filter(.data$metric == metric_name)
   if (variable_breaks == "sort") {

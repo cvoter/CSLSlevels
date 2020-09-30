@@ -5,10 +5,12 @@
 \title{Calculate hydrologic metrics evaluated in the CSLS}
 \usage{
 calculate_metrics(
-  df = CSLSlevels::csls_levels,
+  df = CSLSlevels::hist_levels,
   metrics = c("median_level", "cv_level", "exceedance_level", "exceedance_range",
-    "depart_median", "median_dur", "cv_dur", "num_dur", "num_dur_decade",
-    "median_rise_rate", "cv_rise_rate", "median_fall_rate", "cv_fall_rate")
+    "depart_median", "median_dur", "median_dur_seas", "cv_dur", "cv_dur_seas", "num_dur",
+    "num_dur_seas", "num_2yr", "num_2yr_seas", "num_dur_decade", "num_dur_decade_seas",
+    "num_2yr_decade", "num_2yr_decade_seas", "median_rise_rate", "cv_rise_rate",
+    "median_fall_rate", "cv_fall_rate", "fast_rise", "fast_fall")
 )
 }
 \arguments{

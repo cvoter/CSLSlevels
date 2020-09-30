@@ -4,10 +4,11 @@ output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Modflow}
+  %\VignetteIndexEntry{CSLS Modflow}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
+Dummy text just because?
 
 ```{r setup, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 library(CSLSlevels)
