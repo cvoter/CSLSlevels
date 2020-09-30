@@ -4,13 +4,16 @@
 \alias{calculate_durations}
 \title{Calculate durations}
 \usage{
-calculate_durations(df, probs = c(10, 25, 75, 90))
+calculate_durations(df, probs = c(10, 25, 50, 75, 90), departures = FALSE)
 }
 \arguments{
 \item{df}{a data frame with a "lake" and a "level" column}
 
 \item{probs}{a vector with all exceedance probabilities to calculate.
 Defaults to c(10, 25, 75, 90).}
+
+\item{departures}{logical defaults to FALSE. If TRUE, calculates durations
+1ft above median and 1ft below median}
 }
 \value{
 durations, a data frame with the following columns:

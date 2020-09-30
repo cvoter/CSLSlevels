@@ -52,25 +52,45 @@
 #'
 #' @export
 
-calculate_metrics <- function(df = CSLSlevels::csls_levels,
+calculate_metrics <- function(df = CSLSlevels::hist_levels,
                               metrics = c("median_level",
                                           "cv_level",
                                           "exceedance_level",
                                           "exceedance_range",
                                           "depart_median",
                                           "median_dur",
+                                          "median_dur_seas",
                                           "cv_dur",
+                                          "cv_dur_seas",
                                           "num_dur",
+                                          "num_dur_seas",
+                                          "num_2yr",
+                                          "num_2yr_seas",
                                           "num_dur_decade",
+                                          "num_dur_decade_seas",
+                                          "num_2yr_decade",
+                                          "num_2yr_decade_seas",
                                           "median_rise_rate",
                                           "cv_rise_rate",
                                           "median_fall_rate",
-                                          "cv_fall_rate")) {
+                                          "cv_fall_rate",
+                                          "fast_rise",
+                                          "fast_fall")) {
 
   # 0. Setup data frames =======================================================
   # Include month information
   df$month <- month(df$date)
   df$year  <- year(df$date)
+
+  # Also get seasonal (3-mo avg) levels
+  df_seasons <- df %>%
+                group_by(.data$lake) %>%
+                arrange(.data$date) %>%
+                mutate(level = as.numeric(stats::filter(.data$level,
+                                                         rep(1/3, 3),
+                                                         sides = 2))) %>%
+                ungroup() %>%
+                filter(.data$month %in% c(1,4,7,10))
 
   # Initialize summary data frame
   summary <- NULL
@@ -190,7 +210,13 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
   }
 
   # 2. FREQUENCY ===============================================================
-  durations <- calculate_durations(df, probs = c(10, 25, 50, 75, 90))
+  durations         <- calculate_durations(df,
+                                           probs = c(10, 25, 50, 75, 90),
+                                           departures = TRUE)
+  durations_seasons <- calculate_durations(df_seasons,
+                                           probs = c(10, 25, 50, 75, 90),
+                                           departures = TRUE) %>%
+                       mutate(value = .data$value*3)
 
   # 2a. Departure from median --------------------------------------------------
   if ("depart_median" %in% metrics) {
@@ -213,16 +239,100 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
+  if ("num_2yr" %in% metrics) {
+    vals <- durations %>%
+            filter(.data$value >= 24) %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_2yr",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("num_dur_seas" %in% metrics) {
+    vals <- durations_seasons %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_dur_seas",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("num_2yr_seas" %in% metrics) {
+    vals <- durations_seasons %>%
+            filter(.data$value >= 24) %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_2yr_seas",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
   # 3d. Frequency of high/low levels per decade --------------------------------
   if ("num_dur_decade" %in% metrics) {
     nyrs <- df %>%
-            count(.data$lake, .data$month) %>%
-            select(.data$lake, .data$n) %>%
-            unique()
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
     vals <- durations %>%
             count(.data$lake, .data$variable) %>%
             as.data.frame() %>%
             mutate(metric = "num_dur_decade",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10)) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("num_dur_decade_seas" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
+    vals <- durations_seasons %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_dur_decade_seas",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10)) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("num_2yr_decade" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
+    vals <- durations %>%
+            filter(.data$value >= 24) %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_2yr_decade",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10)) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("num_2yr_decade_seas" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
+    vals <- durations_seasons  %>%
+            filter(.data$value >= 24) %>%
+            count(.data$lake, .data$variable) %>%
+            as.data.frame() %>%
+            mutate(metric = "num_2yr_decade_seas",
                    value = .data$n) %>%
             select(.data$lake, .data$metric, .data$variable, .data$value)
     vals <- vals %>%
@@ -245,6 +355,17 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
     summary <- rbind(summary, vals)
   }
 
+  if ("median_dur_seas" %in% metrics) {
+    vals <- durations_seasons %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = median(.data$value, na.rm = TRUE)) %>%
+            ungroup() %>%
+            as.data.frame() %>%
+            mutate(metric = "median_dur_seas") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
   # 3b. CV duration above/below levels -----------------------------------------
   if ("cv_dur" %in% metrics) {
     vals <- durations %>%
@@ -254,6 +375,18 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
             ungroup() %>%
             as.data.frame() %>%
             mutate(metric = "cv_dur") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("cv_dur_seas" %in% metrics) {
+    vals <- durations_seasons %>%
+            group_by(.data$lake, .data$variable) %>%
+            summarise(value = 100*sd(.data$value, na.rm = TRUE)/
+                        mean(.data$value, na.rm = TRUE)) %>%
+            ungroup() %>%
+            as.data.frame() %>%
+            mutate(metric = "cv_dur_seas") %>%
             select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
@@ -271,6 +404,50 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
             ungroup() %>%
             as.data.frame() %>%
             mutate(metric = "median_rise_rate") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("fast_rise" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
+
+     vals <- rising %>%
+            filter(.data$value >= NISTunits::NISTftTOmeter(3),
+                   .data$variable == "12") %>%
+            group_by(.data$lake, .drop = FALSE) %>%
+            count() %>%
+            ungroup() %>%
+            mutate(metric = "fast_rise",
+                   variable = "rate_3ft",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10),
+                   metric = "fast_rise_decade") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+
+    vals <- rising %>%
+            filter(.data$value >= NISTunits::NISTftTOmeter(1.5),
+                   .data$variable == "12") %>%
+            group_by(.data$lake, .drop = FALSE) %>%
+            count() %>%
+            ungroup() %>%
+            mutate(metric = "fast_rise",
+                   variable = "rate_1_5ft",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10),
+                   metric = "fast_rise_decade") %>%
             select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }
@@ -296,6 +473,48 @@ calculate_metrics <- function(df = CSLSlevels::csls_levels,
             ungroup() %>%
             as.data.frame() %>%
             mutate(metric = "median_fall_rate") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  if ("fast_fall" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
+    vals <- falling %>%
+            filter(.data$value <= NISTunits::NISTftTOmeter(-3),
+             .data$variable == "12") %>%
+            group_by(.data$lake, .drop = FALSE) %>%
+            count() %>%
+            ungroup() %>%
+            mutate(metric = "fast_fall",
+                   variable = "rate_3ft",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10),
+                   metric = "fast_fall_decade") %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+
+    vals <- falling %>%
+            filter(.data$value <= NISTunits::NISTftTOmeter(-1.5),
+                   .data$variable == "12") %>%
+            group_by(.data$lake, .drop = FALSE) %>%
+            count() %>%
+            ungroup() %>%
+            mutate(metric = "fast_fall",
+                   variable = "rate_1_5ft",
+                   value = .data$n) %>%
+            select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+    vals <- vals %>%
+            left_join(nyrs, by = "lake") %>%
+            mutate(value = .data$value/(.data$n/10),
+                   metric = "fast_fall_decade") %>%
             select(.data$lake, .data$metric, .data$variable, .data$value)
     summary <- rbind(summary, vals)
   }

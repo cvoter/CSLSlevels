@@ -7,14 +7,14 @@
 plot_sensitivity(
   df,
   metric_name,
-  metric_title = "",
   variable_title = "",
   variable_breaks = "sort",
   variable_labels,
   variable_colors = NULL,
   text_size = 12,
   vline = 38,
-  hlines = NULL
+  hlines = NULL,
+  metric_title = ""
 )
 }
 \arguments{
@@ -30,8 +30,6 @@ level}
 }}
 
 \item{metric_name}{name of metric to display on this plot}
-
-\item{metric_title}{string to use for plot title, defaults to "" for no title}
 
 \item{variable_title}{string to use for color legend, defaults to "" for no
 title}
@@ -57,6 +55,8 @@ no line.}
 
 \item{hlines}{optional data frame with values to draw horizontal lines for
 PBIS, CV, and RMSE. Defaults to NULL for no line.}
+
+\item{metric_title}{string to use for plot title, defaults to "" for no title}
 }
 \description{
 Creates a facet plot with lakes faceted horizontally and error estimates

@@ -46,6 +46,9 @@
 #' @param show_uncertainty defaults to FALSE. If TRUE, shows dark grey ribbon
 #'   representing mean +/- one standard deviation and a light grey ribbon
 #'   representing mean +/- two standard deviations.
+#' @param show_exceeds defaults to NULL. If a value (e.g., 10, 90) creates a
+#'                     ribbon that highlights when the lake level corresponding
+#'                     to the given exceedance probability is exceeded.
 #' @param ncol number of columns. Defaults to 1 (stacks plots vertically), but can be set to 3 to show all CSLS lakes horizontally
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
@@ -79,6 +82,7 @@ plot_levels <- function(df,
                         convert_units = "",
                         grid_off = TRUE,
                         show_uncertainty = FALSE,
+                        show_exceeds = NULL,
                         ncol = 1) {
   # Filter to desired lakes
   df <- df %>% filter(.data$lake %in% lakes)
@@ -100,8 +104,10 @@ plot_levels <- function(df,
   date_max <- sprintf("%d-02-01", ceiling(year(max(df$date))/10)*10)
   if (max(year(df$date)) - min(year(df$date)) > 40) {
     breaks <- seq(as_datetime(date_min), as_datetime(date_max), "20 years")
+    minor_breaks <- seq(as_datetime(date_min), as_datetime(date_max), "5 years")
   } else {
     breaks <- seq(as_datetime(date_min), as_datetime(date_max), "10 years")
+    minor_breaks <- seq(as_datetime(date_min), as_datetime(date_max), "2 years")
   }
   date_limits  <- c(as_datetime(date_min), as_datetime(date_max) - months(1))
 
@@ -118,6 +124,35 @@ plot_levels <- function(df,
                             fill = "grey70")
   } else {
     plot_obj <- ggplot(data = df)
+  }
+
+  # Add exceedence ribbons, if using
+  if (!is.null(show_exceeds)) {
+    probs     <- show_exceeds
+    exceeds   <- calculate_exceedances(df, probs)
+    line_df   <- exceeds %>%
+                 select(.data$lake, .data$value)
+    if (probs < 50) {
+      ribbon_df <- merge(df, line_df, by = "lake") %>%
+                   group_by(.data$lake, .data$date) %>%
+                   summarise(ymin = min(.data$level, .data$value),
+                             ymax = .data$level) %>%
+                   ungroup()
+    } else {
+      ribbon_df <- merge(df, line_df, by = "lake") %>%
+                   group_by(.data$lake, .data$date) %>%
+                   summarise(ymax = max(.data$level, .data$value),
+                             ymin = .data$level) %>%
+                   ungroup()
+    }
+    plot_obj  <- plot_obj +
+                 geom_ribbon(data = ribbon_df,
+                             aes(x = .data$date,
+                                 ymin = .data$ymin,
+                                 ymax = .data$ymax),
+                             alpha = 0.25,
+                             fill = hline_color,
+                             color = NA)
   }
 
   # Basic plot w/lines for estimate, points for observations
@@ -185,7 +220,7 @@ plot_levels <- function(df,
     df2 <- df
     colnames(df2)[which(colnames(df2) == "level")] <- "level"
     yintercept           <- calculate_exceedances(df2, probs)
-    colnames(yintercept) <- c("lake", "variable", "xintercept")
+    colnames(yintercept) <- c("lake", "variable", "yintercept")
     yintercept$lake      <- factor(yintercept$lake, levels = levels(df$lake))
   }
 
@@ -195,7 +230,7 @@ plot_levels <- function(df,
                 geom_hline(aes(yintercept = yintercept),
                            as.data.frame(yintercept),
                            color = hline_color,
-                           linetype = "dashed",
+                           linetype = "solid",
                            size = line_size)
   }
 
@@ -242,6 +277,7 @@ plot_levels <- function(df,
                                    linetype = linetype_vals,
                                    shape = shape_vals))) +
               scale_x_datetime(breaks = breaks,
+                               minor_breaks = minor_breaks,
                                date_labels = "%Y",
                                expand = c(0,0),
                                limits = date_limits) +
