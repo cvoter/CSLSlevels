@@ -10,11 +10,11 @@ calculate_metrics(
     "depart_median", "median_dur", "median_dur_seas", "cv_dur", "cv_dur_seas", "num_dur",
     "num_dur_seas", "num_2yr", "num_2yr_seas", "num_dur_decade", "num_dur_decade_seas",
     "num_2yr_decade", "num_2yr_decade_seas", "median_rise_rate", "cv_rise_rate",
-    "median_fall_rate", "cv_fall_rate", "fast_rise", "fast_fall")
+    "median_fall_rate", "cv_fall_rate", "fast_rise", "fast_fall", "good_spawning")
 )
 }
 \arguments{
-\item{df}{data frame to use, defaults "CSLSlevels::csls_levels". Must include
+\item{df}{data frame to use, defaults "CSLSlevels::hist_levels". Must include
 columns for "date" (must be POSIXct), "lake" (must be factor), and
 one with the lake levels (named in "col_name" argument).}
 

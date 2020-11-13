@@ -1,0 +1,91 @@
+---
+title: "Semivariogram exploration"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Semivariogram exploration}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(CSLSlevels)
+library(reshape2)
+library(NISTunits)
+library(ggplot2)
+library(extrafont)
+library(patchwork)
+library(lubridate)
+
+lakes <- c("Pleasant", "Long", "Plainfield")
+
+#historical metrics
+hist_levels <- CSLSlevels::hist_levels %>%
+               filter(.data$lake %in% lakes,
+                      year(.data$date) >= 1981,
+                      year(.data$date) <= 2018) %>%
+               mutate(level = NISTmeterTOft(.data$level)) %>%
+               select(.data$lake, .data$date, .data$level)
+
+MODFLOW     <- CSLSdata::MODFLOW %>%
+               mutate(level = NISTmeterTOft(.data$level_m)) %>%
+               select(.data$lake, .data$date, .data$level, .data$sim)
+
+
+nmonths <- nrow(filter(hist_levels[hist_levels$lake == "Pleasant",]))
+
+```
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+calculate_lags <- function(df) {
+  all_lags <- NULL
+  for (h in 1:nmonths) {
+    this_lag <- df %>%
+                group_by(.data$lake) %>%
+                mutate(diff = lead(.data$level, h) - .data$level,
+                       diff_mean = mean(.data$diff, na.rm = TRUE),
+                       diff_sq = (.data$diff - .data$diff_mean)^2) %>%
+                summarise(gamma_hat = (0.5/(nmonths - h))*sum((.data$diff)^2,
+                                                                  na.rm = TRUE),
+                          gamma_line = (0.5/(nmonths - h - 1))*sum(.data$diff_sq, 
+                                                                   na.rm = TRUE))
+    this_lag$h <- h
+    all_lags   <- rbind(all_lags, this_lag)
+  }
+  return(all_lags)
+}
+
+plot_gamma <- function(df, gamma_plot = "gamma_line") {
+  colnames(df)[which(colnames(df) == gamma_plot)] <- "gamma"
+
+  plot_obj <- ggplot(data = df,
+                   aes(x = .data$h,
+                       y = .data$gamma)) +
+              geom_line() +
+              geom_point() +
+              facet_wrap(~.data$lake, scales = "free") +
+              labs(x = "Lag (years)", y = "Semi-Variance (ft^2)") +
+              scale_x_continuous(limits = c(0,nmonths/3),
+                                 breaks = seq(0,nmonths/3, 24),
+                                 minor_breaks = seq(0,nmonths/2, 12),
+                                 labels = seq(0,nmonths/3, 24)/12) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight"))
+  
+  return(plot_obj)
+}
+```
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+lag_historical   <- calculate_lags(hist_levels)
+plot_historical  <- plot_gamma(lag_historical)
+
+lag_MODFLOW_irr  <- calculate_lags(filter(MODFLOW, .data$sim == "irr"))
+plot_MODFLOW_irr <- plot_gamma(lag_MODFLOW_irr)
+
+lag_MODFLOW_no_irr  <- calculate_lags(filter(MODFLOW, .data$sim == "no_irr"))
+plot_MODFLOW_no_irr <- plot_gamma(lag_MODFLOW_no_irr)
+
+```

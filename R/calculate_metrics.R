@@ -25,7 +25,7 @@
 #'   * **cv_fall_rate:** coefficient of variation in lake level rise over 1
 #'                       month, 3 months (seasonal), and 12 months (annual).
 #'
-#' @param df data frame to use, defaults "CSLSlevels::csls_levels". Must include
+#' @param df data frame to use, defaults "CSLSlevels::hist_levels". Must include
 #'           columns for "date" (must be POSIXct), "lake" (must be factor), and
 #'           one with the lake levels (named in "col_name" argument).
 #' @param metrics a list of which metrics to use. Defaults to all of them
@@ -47,7 +47,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
 #' @importFrom lubridate month year
-#' @importFrom stats quantile
+#' @importFrom stats quantile median sd
 #' @import dplyr
 #'
 #' @export
@@ -75,7 +75,8 @@ calculate_metrics <- function(df = CSLSlevels::hist_levels,
                                           "median_fall_rate",
                                           "cv_fall_rate",
                                           "fast_rise",
-                                          "fast_fall")) {
+                                          "fast_fall",
+                                          "good_spawning")) {
 
   # 0. Setup data frames =======================================================
   # Include month information
@@ -524,11 +525,47 @@ calculate_metrics <- function(df = CSLSlevels::hist_levels,
     vals <- falling %>%
             group_by(.data$lake, .data$variable) %>%
             summarise(value = 100*sd(.data$value, na.rm = TRUE)/
-                        mean(.data$value, na.rm = TRUE)) %>%
-            ungroup() %>%
+                        mean(.data$value, na.rm = TRUE),
+                      .groups = "drop") %>%
             as.data.frame() %>%
             mutate(metric = "cv_fall_rate") %>%
             select(.data$lake, .data$metric, .data$variable, .data$value)
+    summary <- rbind(summary, vals)
+  }
+
+  # 5. TIMING ==================================================================
+  if ("good_spawning" %in% metrics) {
+    nyrs <- df %>%
+            count(.data$lake) %>%
+            mutate(n = .data$n/12)
+    if (min(nyrs$n) >= 2) {
+      spawning <- calculate_spawning(df)
+      vals     <- spawning %>%
+                  group_by(.data$lake) %>%
+                  summarise(high_spring = sum(.data$high_spring, na.rm = TRUE),
+                            steady_summer = sum(.data$steady_summer, na.rm = TRUE),
+                            good_spawning = sum(.data$good_spawning, na.rm = TRUE),
+                            .groups ="drop") %>%
+                  left_join(nyrs, by = "lake") %>%
+                  mutate(high_spring = 100*.data$high_spring/(.data$n-1),
+                         steady_summer = 100*.data$steady_summer/.data$n,
+                         good_spawning = 100*.data$good_spawning/(.data$n-1)) %>%
+                  select(.data$lake, .data$high_spring, .data$steady_summer,
+                         .data$good_spawning) %>%
+                  melt(id.vars = "lake")
+      vals     <- vals %>%
+                  mutate(metric = "good_spawning") %>%
+                  select(.data$lake, .data$metric, .data$variable, .data$value)
+    } else {
+      lakes    <- unique(df$lake)
+      variable <- c("high_spring", "steady_summer", "good_spawning")
+      vals     <- expand.grid(lakes, variable)
+      colnames(vals) <- c("lake", "variable")
+      vals     <- vals %>%
+                  mutate(metric = "good_spawning",
+                         value = 0) %>%
+                  select(.data$lake, .data$metric, .data$variable, .data$value)
+    }
     summary <- rbind(summary, vals)
   }
 

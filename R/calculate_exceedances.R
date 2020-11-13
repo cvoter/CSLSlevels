@@ -18,6 +18,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
 #' @importFrom reshape2 melt
+#' @importFrom stats ecdf
 #' @import dplyr
 #'
 #' @export

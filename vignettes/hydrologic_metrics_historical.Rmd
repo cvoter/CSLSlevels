@@ -727,7 +727,23 @@ table_df <- create_table(hist_metrics_short, metric_name, variable_breaks,
 kableExtra::kable(table_df, caption = metric_title)
 ```
 <br>
+
 ## 5. Timing
+
+### Good Spawning Years
+```{r good_spawning, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "good_spawning"
+metric_title    <- "**Good Spawning Years (%)**"
+variable_breaks <- c("high_spring", "steady_summer", "good_spawning")
+variable_labels <- c("High April Levels", "Steady Summer Levels", "Good Spawning Year")
+
+table_df <- create_table(hist_metrics_short, metric_name, variable_breaks, 
+                         variable_labels, convert_units = "",
+                         round_precision = 0.1)
+
+kableExtra::kable(table_df, caption = metric_title)
+```
+
 ### Annual vs. Monthly ranges
 
 ```{r timing, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=4, fig.height=3}

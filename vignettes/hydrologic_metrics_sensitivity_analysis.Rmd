@@ -807,14 +807,35 @@ plot_sensitivity(ts_summary, metric_name, variable_title, variable_breaks,
 
 <br>
 
-```{r fast_fall_rate_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
-plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early,
-                  metric_name, variable_breaks, variable_labels, value_title)
+# Timing
+
+## Good spawning years
+
+```{r good_spawning_01, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+metric_name     <- "good_spawning"
+variable_title  <- "Rate"
+variable_breaks <- c("high_spring", "steady_summer", "good_spawning")
+variable_labels <- c("High April", "Steady Summer", "Good Spawning")
+variable_colors <- c(brewer.pal(9, "Paired")[c(1, 9, 5)])
+value_title     <- "Good Spawning Years (%)"
+hlines          <- data.frame(fit = c("PBIAS", "CV", "RMSE"),
+                              value = c(30, 30, 5))
+
+plot_sensitivity(ts_summary, metric_name, variable_title, variable_breaks,
+                 variable_labels, variable_colors, text_size, hlines = hlines)
 ```
 
 <br>
 
-```{r fast_fall_rate_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
+```{r good_spawning_02, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=3}
+plot_short_v_long(hist_metrics_short, hist_metrics_long, hist_metrics_early,
+                  metric_name, variable_breaks, variable_labels, value_title,
+                  rotate_xticks = TRUE)
+```
+
+<br>
+
+```{r good_spawning_03, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=6.5, fig.height=6}
 table_df <- create_table(hist_metrics_diff, metric_name, variable_breaks, 
                          variable_labels, round_precision = 0.1)
 kableExtra::kable(table_df, caption = "Difference from Full Timeseries (occurances)")

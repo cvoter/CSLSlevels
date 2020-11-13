@@ -187,7 +187,7 @@ ggplot(data = plot_areas) +
         legend.position = "top")
 ```
 
-```{r psnt, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=fig_width, fig.height=fig_height}
+```{r psnt, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=fig_width, fig.height=fig_height}
 lake <- "Pleasant"
 
 # Desired resolution of areas and lake extents
