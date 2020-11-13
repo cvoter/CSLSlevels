@@ -1,0 +1,205 @@
+---
+title: "Significance Summary"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Significance Summary}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(NISTunits)
+library(ggplot2)
+library(extrafont)
+library(patchwork)
+
+lakes <- c("Pleasant", "Long", "Plainfield")
+
+hist_metrics <- CSLSlevels::hist_metrics_short %>%
+                filter(.data$lake != "Devils") %>%
+                group_by(.data$lake, .data$metric, .data$variable) %>%
+                summarise(median = median(.data$value),
+                          sd = sd(.data$value),
+                          .groups = "drop") %>%
+                filter(.data$metric %in% c("exceedance_level",
+                                           "exceedance_range",
+                                           "num_2yr_seas",
+                                           "good_spawning")) %>%
+                mutate(median = ifelse(.data$metric %in% c("num_2yr_seas",
+                                                           "good_spawning"),
+                                       .data$median, 
+                                       NISTmeterTOft(.data$median)),
+                       sd = ifelse(.data$metric %in% c("num_2yr_seas",
+                                                           "good_spawning"),
+                                       .data$sd, 
+                                       NISTmeterTOft(.data$sd)))
+# write.csv(hist_metrics, "hist_metrics.csv")
+```
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=4.5}
+# Read in significance, adjust zero and infinite values
+significance      <- read.csv("hist_metrics.csv")
+significance$lake <- factor(significance$lake,
+                            levels = lakes)
+max_level         <- data.frame(lake = c("Pleasant", "Long", "Plainfield"),
+                                max_level_ft = c(983.5, 1105.1, 1104.7))
+significance      <- significance %>%
+                     left_join(max_level, by = "lake") %>%
+                     mutate(change_low = ifelse(.data$change_low == 0,
+                                                -.data$sd, 
+                                                .data$change_low),
+                            change_high = ifelse(.data$change_high == 0,
+                                                 .data$sd,
+                                                 ifelse(is.infinite(.data$change_high),
+                                                        .data$max_level_ft-.data$median,
+                                                        .data$change_high)))
+```
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=4.5}
+plot_metric <- function(df, 
+                        ytitle = "",
+                        title = "",
+                        guides_off = FALSE,
+                        expand_zero = FALSE,
+                        color_breaks = c("plants", "fish", "stratification"),
+                        color_labels = c("Plants", "Fish", "Stratification"),
+                        color_values = c("#33A02C", "#A6CEE3", "#FB9A99"),
+                        shape_values = c(15, 16, 17),
+                        text_size = 10) {
+  
+  plot_obj <- ggplot(df) +
+              geom_point(aes(x = .data$variable,
+                             y = .data$median,
+                             color = .data$indicator,
+                             shape = .data$indicator),
+                         size = 2,
+                         position=position_dodge(width=0.75)) +
+              geom_linerange(aes(x = .data$variable,
+                                 ymin = .data$median,
+                                 ymax = .data$median + .data$change_high,
+                                 color = .data$indicator),
+                             size = 1,
+                             position=position_dodge(width=0.75)) +
+              geom_linerange(aes(x = .data$variable,
+                                 ymax = .data$median,
+                                 ymin = .data$median + .data$change_low,
+                                 color = .data$indicator),
+                             size = 1,
+                             position=position_dodge(width=0.75)) +
+              labs(x = "", 
+                   y = ytitle,
+                   title = title) +
+              scale_color_manual(name = "",
+                                 breaks = color_breaks,
+                                 labels = color_labels,
+                                 values = color_values)+
+              scale_shape_manual(name = "",
+                                 breaks = color_breaks,
+                                 labels = color_labels,
+                                 values = shape_values) +
+              theme_bw() +
+              theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                      plot.title = element_text(family = "Segoe UI Semibold"),
+                    legend.position = "top")
+  if (expand_zero) {
+    plot_obj <- plot_obj + 
+                scale_y_continuous(expand = c(0,0))
+  }
+  if (guides_off) {
+    plot_obj <- plot_obj +
+                guides(color = FALSE, shape = FALSE)
+  }
+  return(plot_obj)
+}
+```
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, fig.width=6.5, fig.height=4.5}
+for (lake in lakes) {
+  plot_df <- filter(significance, .data$lake == !!lake)
+  # Exceedance probabilities
+  pdf1          <- plot_df %>% filter(.data$metric == "exceedance_level")
+  pdf1$variable <- factor(pdf1$variable,
+                          levels = c(10, 25, 50, 75, 90),
+                          labels = c("Infrequent\nHigh", "Frequent\nHigh",
+                                     "Median", "Frequent\nLow",
+                                     "Infrequent\nLow"))
+  # Exceedance probability range
+  pdf2          <- plot_df %>% filter(.data$metric == "exceedance_range")
+  pdf2$variable <- factor(pdf2$variable,
+                          levels = "m_10_90",
+                          labels = c("Infrequent High - \nInfrequent Low"))
+  
+  # Frequency & duration
+  pdf3          <- plot_df %>% filter(.data$metric == "num_2yr_seas")
+  pdf3$variable <- factor(pdf3$variable,
+                          levels = c("a50", "b50"),
+                          labels = c("Above\nMedian", "Below\nMedian"))
+  # pdf4 <- plot_df %>% 
+  #         filter(.data$metric %in% c("median_rise_rate",
+  #                                    "median_fall_rate")) %>%
+  #         mutate(new_variable = ifelse(.data$metric == "median_rise_rate",
+  #                                      sprintf("%s-Mo.\nRise", 
+  #                                              as.character(.data$variable)),
+  #                                      sprintf("%s-Mo.\nFall", 
+  #                                              as.character(.data$variable))),
+  #                variable = new_variable)
+  # pdf4$variable <- factor(pdf4$variable,
+  #                         levels = c("1-Mo.\nRise", "3-Mo.\nRise", "12-Mo.\nRise",
+  #                                    "1-Mo.\nFall", "3-Mo.\nFall", "12-Mo.\nFall"))
+  # Timing
+  pdf4 <- plot_df %>% filter(.data$metric == "good_spawning")
+  pdf4$variable <- factor(pdf4$variable,
+                          levels = c("good_spawning"),
+                          labels = c("Pike"))
+  p1 <- plot_metric(pdf1, 
+                    ytitle = "Lake Elevation (ft)", 
+                    title = "Magnitude", 
+                    guides_off = FALSE,
+                    expand_zero = TRUE)
+  p2 <- plot_metric(pdf2, 
+                    ytitle = "Lake Level Range (ft)", 
+                    title = "", 
+                    guides_off = TRUE,
+                    expand_zero = FALSE)
+  p3 <- plot_metric(pdf3, 
+                    ytitle = "No. of \u2265 2-yr durations", 
+                    title = "Frequency/\nDuration", 
+                    guides_off = TRUE,
+                    expand_zero = FALSE)
+  p4 <- plot_metric(pdf4, 
+                    ytitle = "Good Spawning Years (%)", 
+                    title = "Timing",
+                    guides_off = TRUE,
+                    expand_zero = FALSE)
+  
+  # Plot all together
+  if (lake != "Pleasant") {
+    layout <- "
+            AAAAABCC
+            "
+    plot_obj <- p1 + p2 + p3 +
+                plot_layout(guides = "collect", design = layout) &
+                theme(legend.position = "bottom",
+                      text = element_text(family = "Segoe UI Semilight",
+                                          size = 10),
+                      plot.title = element_text(family = "Segoe UI Semibold"))
+  } else {
+    layout <- "
+              AAAAABCCD
+              "
+    plot_obj <- p1 + p2 + p3 + p4 +
+                plot_layout(guides = "collect", design = layout) &
+                theme(legend.position = "bottom",
+                      text = element_text(family = "Segoe UI Semilight",
+                                          size = 10),
+                      plot.title = element_text(family = "Segoe UI Semibold"))
+  }
+  ggsave(sprintf("%s_significance.png", lake), 
+         width = 6.5, height = 3, units = "in")
+}
+
+```

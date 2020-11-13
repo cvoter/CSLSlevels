@@ -18,6 +18,7 @@
 #'
 #' @return plot_obj, a plot with the imputed and observed lake levels.
 #'
+#' @importFrom stats median
 #' @import lubridate
 #' @import ggplot2
 #' @import extrafont

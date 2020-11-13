@@ -32,6 +32,7 @@
 #' @importFrom rlang .data
 #' @importFrom dplyr filter
 #' @importFrom NISTunits NISTmeterTOft
+#' @importFrom stats ts
 #'
 #' @export
 

@@ -10,7 +10,7 @@
 #' @return plot_obj, a plot with the depth contours of the lake.
 #'
 #' @importFrom rlang .data
-#' @importFrom raster rasterToContour
+#' @importFrom raster rasterToContour rasterToPoints
 #' @importFrom dplyr filter group_by summarise left_join mutate select ungroup
 #' @importFrom NISTunits NISTmeterTOft NISTftTOmeter
 #' @import ggplot2

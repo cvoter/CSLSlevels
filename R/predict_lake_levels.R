@@ -14,6 +14,7 @@
 #' @importFrom dplyr filter select mutate
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
+#' @importFrom stats sd
 #'
 #' @export
 

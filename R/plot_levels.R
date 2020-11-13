@@ -58,6 +58,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data
 #' @importFrom scales pretty_breaks
+#' @importFrom stats median
 #' @import dplyr
 #' @import ggplot2
 #' @import extrafont
@@ -238,10 +239,10 @@ plot_levels <- function(df,
     df2     <- df
     # colnames(df2)[which(colnames(df2) == "level")] <- "level"
     exceeds <- calculate_exceedances(df2, c(10, 50, 90))
-    rect_df <- dcast(filter(exceeds, variable != "50"),
+    rect_df <- dcast(filter(exceeds, .data$variable != "50"),
                      lake~variable,
                      value.var = "value")
-    line_df <- filter(exceeds, variable == "50") %>%
+    line_df <- filter(exceeds, .data$variable == "50") %>%
                select(.data$lake, .data$value)
     colnames(rect_df) <- c("lake", "ymax", "ymin")
     plot_obj <- plot_obj +
