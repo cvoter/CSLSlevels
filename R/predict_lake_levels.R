@@ -87,7 +87,7 @@ predict_lake_levels <- function(study_lakes,
   lake_pred    <- left_join(lake_pred, sim_err, by = "sim")
 
 
-  # Join months and filter to top models
+  # Join months
   lake_pred <- left_join(lake_pred, obs_mo_index) %>%
                mutate(lake_name = lake_name) %>%
                select(.data$lake_name, .data$obs_mo, .data$sim, .data$level,
