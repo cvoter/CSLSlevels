@@ -5,24 +5,28 @@
 \title{Calculate hydrologic metrics evaluated in the CSLS}
 \usage{
 calculate_metrics(
-  df = CSLSlevels::hist_levels,
+  df_month = CSLSlevels::hist_levels,
+  dts = c(1, 3, 12),
   metrics = c("median_level", "cv_level", "exceedance_level", "exceedance_range",
-    "depart_median", "median_dur", "median_dur_seas", "cv_dur", "cv_dur_seas", "num_dur",
-    "num_dur_seas", "num_2yr", "num_2yr_seas", "num_dur_decade", "num_dur_decade_seas",
-    "num_2yr_decade", "num_2yr_decade_seas", "median_rise_rate", "cv_rise_rate",
-    "median_fall_rate", "cv_fall_rate", "fast_rise", "fast_fall", "good_spawning")
+    "depart_median", "median_dur", "cv_dur", "num_dur", "num_2yr", "num_dur_decade",
+    "num_2yr_decade", "median_rise_rate", "cv_rise_rate", "median_fall_rate",
+    "cv_fall_rate", "fast_rise", "fast_rise_decade", "fast_fall", "fast_fall_decade",
+    "good_spawning")
 )
 }
 \arguments{
-\item{df}{data frame to use, defaults "CSLSlevels::hist_levels". Must include
-columns for "date" (must be POSIXct), "lake" (must be factor), and
-one with the lake levels (named in "col_name" argument).}
+\item{dts}{vector of dt values (months) to calculate metrics for, defaults to
+1 (monthly), 3 (seasonal), and 12 (annual).}
 
 \item{metrics}{a list of which metrics to use. Defaults to all of them
 c("median_level", "cv_level", "exceedance_level",
 "exceedance_range", "median_dur", "cv_dur",
 "median_rise_rate", "cv_rise_rate", "median_fall_rate",
 "cv_fall_rate").}
+
+\item{df}{data frame to use, defaults "CSLSlevels::hist_levels". Must include
+columns for "date" (must be POSIXct), "lake" (must be factor), and
+one with the lake levels (named in "col_name" argument).}
 }
 \value{
 summary, a data frame with the following columns:
@@ -34,6 +38,7 @@ metric "median_rise_rate" will have variables of "1", "3",
 and "12" associated with it indicating the median rate over
 1 month, 3 months, and 12 months, character}
 \item{value}{calculated value of the metric, numeric}
+\item{series}{type of time series used (monthly, seasonal, annual)}
 }
 \description{
 This function calculates hydrologic metrics describing the magnitude,

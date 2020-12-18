@@ -138,18 +138,6 @@ for (lake in lakes) {
   pdf3$variable <- factor(pdf3$variable,
                           levels = c("a50", "b50"),
                           labels = c("Above\nMedian", "Below\nMedian"))
-  # pdf4 <- plot_df %>% 
-  #         filter(.data$metric %in% c("median_rise_rate",
-  #                                    "median_fall_rate")) %>%
-  #         mutate(new_variable = ifelse(.data$metric == "median_rise_rate",
-  #                                      sprintf("%s-Mo.\nRise", 
-  #                                              as.character(.data$variable)),
-  #                                      sprintf("%s-Mo.\nFall", 
-  #                                              as.character(.data$variable))),
-  #                variable = new_variable)
-  # pdf4$variable <- factor(pdf4$variable,
-  #                         levels = c("1-Mo.\nRise", "3-Mo.\nRise", "12-Mo.\nRise",
-  #                                    "1-Mo.\nFall", "3-Mo.\nFall", "12-Mo.\nFall"))
   # Timing
   pdf4 <- plot_df %>% filter(.data$metric == "good_spawning")
   pdf4$variable <- factor(pdf4$variable,
@@ -202,4 +190,90 @@ for (lake in lakes) {
          width = 6.5, height = 3, units = "in")
 }
 
+# Most sensitive metrics for each
+for (lake in lakes){
+  plot_df <- filter(significance, .data$lake == !!lake) %>% 
+             group_by(.data$lake, .data$metric, .data$variable) %>% 
+             summarise(median = median(.data$median), 
+                       change_low = max(.data$change_low), 
+                       change_high = min(.data$change_high), 
+                       .groups = "drop") %>%
+             mutate(indicator = "sensitive")
+  # Exceedance probabilities
+  pdf1          <- plot_df %>% filter(.data$metric == "exceedance_level")
+  pdf1$variable <- factor(pdf1$variable,
+                          levels = c(10, 25, 50, 75, 90),
+                          labels = c("Infrequent\nHigh", "Frequent\nHigh",
+                                     "Median", "Frequent\nLow",
+                                     "Infrequent\nLow"))
+  # Exceedance probability range
+  pdf2          <- plot_df %>% filter(.data$metric == "exceedance_range")
+  pdf2$variable <- factor(pdf2$variable,
+                          levels = "m_10_90",
+                          labels = c("Infrequent High - \nInfrequent Low"))
+  
+  # Frequency & duration
+  pdf3          <- plot_df %>% filter(.data$metric == "num_2yr_seas")
+  pdf3$variable <- factor(pdf3$variable,
+                          levels = c("a50", "b50"),
+                          labels = c("Above\nMedian", "Below\nMedian"))
+  
+  # Timing
+  pdf4 <- plot_df %>% filter(.data$metric == "good_spawning")
+  pdf4$variable <- factor(pdf4$variable,
+                          levels = c("good_spawning"),
+                          labels = c("Pike"))
+  
+  p1 <- plot_metric(pdf1, 
+                    ytitle = "Lake Elevation (ft)", 
+                    title = "Magnitude", 
+                    guides_off = FALSE,
+                    expand_zero = TRUE,
+                    color_breaks = c("sensitive"),
+                    color_labels = c(""),
+                    color_values = c("grey70"),
+                    shape_values = c(16),
+                    text_size = 10) + theme(legend.position = "none")
+  p2 <- plot_metric(pdf2, 
+                    ytitle = "Lake Level Range (ft)", 
+                    title = "", 
+                    guides_off = TRUE,
+                    expand_zero = FALSE,
+                    color_breaks = c("sensitive"),
+                    color_labels = c(""),
+                    color_values = c("grey70"),
+                    shape_values = c(16),
+                    text_size = 10) + theme(legend.position = "none")
+  p3 <- plot_metric(pdf3, 
+                    ytitle = "No. of \u2265 2-yr durations", 
+                    title = "Frequency/\nDuration", 
+                    guides_off = TRUE,
+                    expand_zero = FALSE,
+                    color_breaks = c("sensitive"),
+                    color_labels = c(""),
+                    color_values = c("grey70"),
+                    shape_values = c(16),
+                    text_size = 10) + theme(legend.position = "none")
+   p4 <- plot_metric(pdf4, 
+                    ytitle = "Good Spawning Years (%)", 
+                    title = "Timing",
+                    guides_off = TRUE,
+                    expand_zero = FALSE,
+                    color_breaks = c("sensitive"),
+                    color_labels = c(""),
+                    color_values = c("grey70"),
+                    shape_values = c(16),
+                    text_size = 10) + theme(legend.position = "none")
+  layout <- "
+            AAAAABCCD
+            "
+  plot_obj <- p1 + p2 + p3 + p4 +
+                plot_layout(design = layout) &
+                theme(legend.position = "bottom",
+                      text = element_text(family = "Segoe UI Semilight",
+                                          size = 10),
+                      plot.title = element_text(family = "Segoe UI Semibold"))
+    ggsave(sprintf("%s_significance_sensitive.png", lake), 
+         width = 6.5, height = 3, units = "in")
+}
 ```

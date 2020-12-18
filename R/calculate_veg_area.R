@@ -80,6 +80,9 @@ calculate_veg_area <- function(lake,
   if (is.null(deepest$submergent)) {
     deepest$submergent <- elev$max - elev$min + contour_interval
   }
+  if (is.null(deepest$submergent_algae)) {
+    deepest$submergent_algae <- elev$max - elev$min + contour_interval
+  }
 
   # Vegetation elevations: lower and upper extent of class
   upper <- data.frame(lake = elev_area_veg$elev)

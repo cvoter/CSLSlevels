@@ -26,10 +26,10 @@ establish_lake_extents <- function(lake,
   min_elev       <- round(minValue(this_raster), 2)
 
   # Maximum lake level (observed or interpolated)
-  historic_levels  <- CSLSlevels::csls_levels
+  historic_levels  <- CSLSlevels::hist_levels
   recent_levels    <- CSLSdata::lake_levels
   recent_levels    <- recent_levels %>% filter(.data$lake == !!lake)
-  max_estimate     <- max(historic_levels$level_pred[which(historic_levels$lake == lake)])
+  max_estimate     <- max(historic_levels$level[which(historic_levels$lake == lake)])
   max_data         <- max(recent_levels$level_m, na.rm = TRUE)
   max_elev         <- round(max(max_estimate, max_data), 2)
   max_elev         <- max_elev - min_deepest

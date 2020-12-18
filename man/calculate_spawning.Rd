@@ -4,7 +4,7 @@
 \alias{calculate_spawning}
 \title{Calculate good spawning years}
 \usage{
-calculate_spawning(df, growing_months = c(5, 6, 7, 8, 9, 10))
+calculate_spawning(df, growing_months = c(4, 5, 6, 7, 8, 9, 10))
 }
 \arguments{
 \item{df}{a data frame with a "lake" and a "level" column}

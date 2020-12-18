@@ -1,0 +1,236 @@
+---
+title: "Key indicators example"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{indicator examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(lubridate)
+library(NISTunits)
+library(ggplot2)
+library(extrafont)
+library(patchwork)
+
+text_size <- 12
+lake <- "Pleasant"
+elev_area_vol <- CSLSdata::elev_area_vol
+elev_area_vol <- elev_area_vol %>% filter(.data$lake == !!lake)
+elev_area_vol$elev_ft <- NISTmeterTOft(elev_area_vol$elev_m)
+
+# Calculate maximum depth (meters)
+psnt_raster <- CSLSlevels::lake_raster[[lake]]
+min_elev    <- raster::minValue(psnt_raster)
+elev_area_vol <- elev_area_vol %>%
+                 arrange(.data$elev_m) %>%
+                 mutate(max_depth_m = .data$elev_m - min_elev,
+                        mean_depth_m = .data$vol_m3/.data$area_m2)
+
+# Calculate log10 lake area
+elev_area_vol$area_ha  <- NISTsqrMeterTOhectare(elev_area_vol$area_m2)
+elev_area_vol$area_km2 <- 1e-6*elev_area_vol$area_m2
+elev_area_vol$vol_ac_ft <- NISTcubMeterTOacreFt(elev_area_vol$vol_m3)
+
+# Calculate 10, 50, 90 exceedance levels
+csls_levels <- CSLSlevels::hist_levels
+psnt_levels <- csls_levels %>%
+               filter(.data$lake == !!lake,
+                      year(.data$date) >= 1981,
+                      year(.data$date) <= 2018)
+psnt_probs  <- CSLSlevels::calculate_exceedances(df = psnt_levels,
+                                                 probs = c(10,50,90))
+psnt_probs$value <- NISTmeterTOft(psnt_probs$value)
+
+# Calculate Lathrop/Lillie ratio
+elev_area_vol$ratio   <- (elev_area_vol$max_depth_m - 0.1)/
+                         log10(elev_area_vol$area_ha)
+elev_area_vol$ratio[elev_area_vol$elev_ft < 957] <- NA
+
+```
+
+
+```{r eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+filename <- "elev_strat.png"
+threshold_ratio <- 3.8
+threshold_elev  <- approx(x = elev_area_vol$ratio, 
+                          y = elev_area_vol$elev_ft, 
+                          xout = threshold_ratio)$y
+  
+thresholds <- data.frame(ratio = c(0, threshold_ratio,
+                                   threshold_ratio, threshold_ratio),
+                         elev_ft = c(threshold_elev, threshold_elev,
+                                     threshold_elev, min(elev_area_vol$elev_ft)))
+plot_obj <- ggplot() +
+            geom_path(data = elev_area_vol,
+                      aes(x = ratio, y = elev_ft),
+                      size = 1) +
+            geom_path(data = thresholds,
+                       aes(x = ratio, y = elev_ft),
+                       linetype = "dashed") +
+            # geom_text(data = data.frame(x = threshold_ratio,
+            #                              y = threshold_elev + 1,
+            #                              label = sprintf("%.1f ft", threshold_elev)),
+            #            aes(x = x, y = y, label = label),
+            #           hjust = 1,
+            #           family = "Segoe UI Semilight",
+            #           size = 3.5) +
+            geom_rect(data = data.frame(ymin = psnt_probs$value[psnt_probs$variable == "90"],
+                                        ymax = psnt_probs$value[psnt_probs$variable == "10"],
+                                        xmin = -Inf,
+                                        xmax = Inf),
+                      aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                      fill = "grey", alpha = 0.5) +
+            geom_hline(yintercept = psnt_probs$value[psnt_probs$variable == "50"]) +
+            labs(x = "Lathrop/Lillie Ratio",
+                 y = "Lake Elevation (ft)") +
+            scale_x_continuous(expand = c(0,0),
+                               limits = c(0,max(elev_area_vol$ratio))) +
+            scale_y_continuous(expand = c(0,0),
+                               limits = c(min(elev_area_vol$elev_ft), 
+                                          max(elev_area_vol$elev_ft))) +
+            theme_bw() +
+            theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                  plot.title = element_text(hjust = 0.5))
+
+ggsave(filename = filename,
+       plot = plot_obj,
+       device = "png",
+       width = 4, 
+       height = 2.25, 
+       units = "in")
+
+```
+
+```{r eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+filename <- "elev_vol.png"
+plot_obj <- ggplot() +
+            geom_path(data = elev_area_vol,
+                      aes(x = vol_ac_ft, y = elev_ft),
+                      size = 1) +
+            geom_rect(data = data.frame(ymin = psnt_probs$value[psnt_probs$variable == "90"],
+                                        ymax = psnt_probs$value[psnt_probs$variable == "10"],
+                                        xmin = -Inf,
+                                        xmax = Inf),
+                      aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                      fill = "grey", alpha = 0.5) +
+            geom_hline(yintercept = psnt_probs$value[psnt_probs$variable == "50"]) +
+            labs(x = "Lake Volume (ac-ft)",
+                 y = "Lake Elevation (ft)") +
+            scale_x_reverse(expand = c(0,0),
+                            limits = c(max(elev_area_vol$vol_ac_ft),0)) +
+            scale_y_continuous(expand = c(0,0),
+                               limits = c(min(elev_area_vol$elev_ft), 
+                                          max(elev_area_vol$elev_ft))) +
+            theme_bw() +
+            theme(text = element_text(family = "Segoe UI Semilight",
+                                        size = text_size),
+                  plot.title = element_text(hjust = 0.5))
+
+ggsave(filename = filename,
+       plot = plot_obj,
+       device = "png",
+       width = 4, 
+       height = 2.25, 
+       units = "in")
+
+```
+
+
+```{r eval=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+filename <- "elev_plants.png"
+# Veg classes currently hardwired to search for an "upland" (very driest) and
+# "submergent" (very wettest) class, but otherwise number and names of
+# vegetation classes can be changed as desired. Just needs to be consisistent
+# across the "deepest" and "shallowest" data frames.
+
+# Deepest limits of veg classes in feet. Assumes submergent can go to deepest
+# part of lake (but can input specific depth if desired)
+deepest <- data.frame(upland = -1,
+                      inland_beach = 1.6,
+                      emergent = 3,
+                      floating = 8,
+                      submergent_weed = 15)
+
+# Shallow limits of veg classes in feet. Assumes no limit to upland vegetation
+# (but can input specific depth if desired).
+shallowest <- data.frame(submergent_algae = 16,
+                         submergent_weed = 1.6,
+                         floating = 3,
+                         emergent = -1,
+                         inland_beach = -1.6)
+
+
+# Caculate areas and percent area cover of each vegetation class
+# areas$area is veg habitat areas corresponding to given lake elevations in units L^2
+# areas$crs_units indicates what units L are (e.g., m for meters)
+# areas$pcnt is percent veg habitat areas corresponding to given lake elevations
+areas      <- calculate_veg_area(lake, deepest, shallowest, contour_interval = 0.05)
+areas      <- areas$area %>%
+              select(-c("tot_area"))
+areas$elev <- NISTmeterTOft(areas$elev)
+plot_areas <- melt(areas, id.vars = "elev") %>%
+              mutate(value = NISTsqrMeterTOacre(.data$value))
+
+plot_obj <- ggplot(data = plot_areas) +
+            geom_path(aes(x = value, 
+                          y = elev, 
+                          color = variable),
+                      size = 1) +
+            geom_rect(data = data.frame(ymin = psnt_probs$value[psnt_probs$variable == "90"],
+                                        ymax = psnt_probs$value[psnt_probs$variable == "10"],
+                                        xmin = -Inf,
+                                        xmax = Inf),
+                      aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                      fill = "grey", alpha = 0.5) +
+            geom_hline(yintercept = psnt_probs$value[psnt_probs$variable == "50"]) +
+            scale_y_continuous(expand = c(0,0)) +
+            scale_x_continuous(expand = c(0,0)) +
+            scale_color_manual(breaks = c("upland", 
+                                          "inland_beach", 
+                                          "emergent", 
+                                          "floating", 
+                                          "submergent_weed", 
+                                          "submergent_algae"),
+                               labels = c("Upland", 
+                                          "Inland Beach", 
+                                          "Emergent Marsh", 
+                                          "Floating-leaf Marsh", 
+                                          "Submergent Pondweeds", 
+                                          "Submergent Macroalgae"),
+                               values = c("#e8caa1", 
+                                          "#ffbe24",
+                                          "#bed655",
+                                          "#64c1a4",
+                                          "#fc8556",
+                                          "#e683be")) +
+            labs(x = "Plant Community Area (ac)",
+                 y = "Lake Elevation (ft)",
+                 color = "") +
+            theme_bw() +
+            theme(text = element_text(family = "Segoe UI Semilight",
+                                      size = text_size),
+                  plot.title = element_text(hjust = 0.5),
+                  panel.grid.minor = element_blank(),
+                  legend.position = "top")
+
+ggsave(filename = filename,
+       plot = plot_obj + theme(legend.position = "none"),
+       device = "png",
+       width = 4, 
+       height = 2.25, 
+       units = "in")
+
+ggsave(filename = "elev_plants_legend.png",
+       plot = plot_obj,
+       device = "png",
+       width = 5, 
+       height = 2.25, 
+       units = "in")
+
+```

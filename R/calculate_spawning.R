@@ -19,7 +19,7 @@
 #' @export
 
 calculate_spawning <- function(df,
-                               growing_months = c(5, 6, 7, 8, 9, 10)) {
+                               growing_months = c(4, 5, 6, 7, 8, 9, 10)) {
   max_fall      <- NISTinchTOmeter(-2)
   growing_mean  <- df %>%
                    filter(.data$month %in% growing_months) %>%
@@ -34,18 +34,13 @@ calculate_spawning <- function(df,
                                                 TRUE, FALSE)) %>%
                    select(.data$lake, .data$year, .data$high_spring)
   steady_summer <- df %>%
-                   filter(.data$month %in% c(4, 5, 6, 7)) %>%
-                   select(.data$lake, .data$year, .data$month, .data$level) %>%
-                   dcast(lake+year~month, value.var = "level")
-  colnames(steady_summer) <- c("lake", "year", "apr", "may", "jun", "jul")
-  steady_summer <- steady_summer %>%
-                   mutate(may_apr = .data$may-.data$apr,
-                   jun_may = .data$jun-.data$may,
-                   jul_jun = .data$jul-.data$jun,
-                   steady_summer = ifelse(.data$may_apr >= max_fall &
-                                            .data$jun_may >= max_fall &
-                                            .data$jul_jun >= max_fall,
-                                          TRUE, FALSE)) %>%
+                   group_by(.data$lake, .data$year) %>%
+                   summarise(spring = mean(.data$level[.data$month %in% c(3, 4, 5)]),
+                             summer = mean(.data$level[.data$month %in% c(6, 7)]),
+                             .groups = "drop") %>%
+                   mutate(steady_summer = ifelse((.data$summer-.data$spring) >=
+                                                   max_fall,
+                                                 TRUE, FALSE)) %>%
                    select(.data$lake, .data$year, .data$steady_summer)
   good_spawning <- left_join(high_spring, steady_summer, by = c("lake", "year")) %>%
                    mutate(good_spawning = ifelse(.data$high_spring & .data$steady_summer,
